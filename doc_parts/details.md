@@ -71,7 +71,7 @@
     Problem is that that pin value will remain at LOW forever, till
     "occurred" flag will be cleared programmatically.
 
-    And to do it programmatically you need two SPI wires: SCL, SDA.
+    And to do it programmatically you need two I2C wires: SCL, SDA.
     Which defeats whole purpose of alarm pin as now your overseer
     device can not only clear "occurred" flag but read time, implement
     custom logic and manage output pin himself.
