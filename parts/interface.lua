@@ -19,5 +19,5 @@ return
     get_fields = request('get_fields.run'),
     update_presentations = request('update_presentations.run'),
     --
-    rtc_handler = request('rtc_handler.interface'),
+    rtc_handler = request('illusive_rtc_handler.interface'),
   }
