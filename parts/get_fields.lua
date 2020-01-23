@@ -1,5 +1,5 @@
 --[[
-  Represent GUI values as DS3231 record.
+  Store GUI values to DS3231 state.
 ]]
 
 return
