@@ -1,5 +1,5 @@
 --[[
-  Set GUI values according given DS3231 table.
+  Set GUI values according to given DS3231 state.
 ]]
 
 local update_presentations = request('update_presentations.run')
