@@ -16,7 +16,7 @@ return
 
           button(
             'Set _current time',
-            {onClick = self:create_set_cur_time_handler()}
+            {onClick = self:spawn_set_cur_time()}
           ),
           button(
             'Get _temperature',
