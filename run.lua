@@ -39,7 +39,9 @@ app:addMember(main_window)
 self:install_presentation_updaters(app)
 
 local rtc_rec = self.rtc_handler:load_rtc()
-assert(rtc_rec, "Can't get RTC record. Check wiring.")
+local recommendation =
+  'Check wiring. Check "StandardFirmata" sketch is burned into Arduino.'
+assert(rtc_rec, "Can't get RTC record." .. ' ' .. recommendation)
 self.set_fields(app, rtc_rec)
 
 main_window:setValue('Status', 'show')
