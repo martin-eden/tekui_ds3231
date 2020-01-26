@@ -23,7 +23,7 @@ return
         for _ = 1, max_tries do
           delay(delay_time)
           parsed_rtc = self.rtc_handler:load_rtc()
-          if not not parsed_rtc.converting_temperature then
+          if not parsed_rtc.converting_temperature then
             break
           end
         end
