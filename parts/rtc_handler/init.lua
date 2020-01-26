@@ -1,4 +1,4 @@
-local tty = request('!.mechs.tty')
+local tty_set_non_blocking_read= request('!.mechs.tty.set_non_blocking_read')
 local file_exists = request('!.file.exists')
 local sleep = request('!.system.sleep')
 
@@ -22,7 +22,7 @@ return
       else
         is_ok, err_msg =
           pcall(
-            tty.set_non_blocking_read,
+            tty_set_non_blocking_read,
             self.tty_name,
             read_timeout,
             baud
