@@ -1,3 +1,10 @@
+--[[
+  Parse table with sequence of bytes (assumed to be read from
+  device memory) to structured table with named keys.
+
+  See code for result table structure.
+]]
+
 local slice_bits = request('!.number.slice_bits')
 local get_bit = request('!.number.get_bit')
 local from_bcd = request('!.number.from_bcd')
@@ -66,7 +73,8 @@ return
         fixed_wave_32k_enabled = get_bit(dump[15], 3),
         clock_was_stopped = get_bit(dump[15], 7),
         clock_speed = uint8_to_int8(dump[16]),
-        temperature = parse_temperature(dump[17], dump[18]),
+        temperature =
+          parse_temperature(dump[17], slice_bits(dump[18], 6, 7)),
       }
 
     local hour = parse_hour(slice_bits(dump[2], 0, 6))

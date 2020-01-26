@@ -1,3 +1,8 @@
+--[[
+  Compile table with DS3231 parameters to table with sequence of
+  bytes. This result table is supposed to be written to device.
+]]
+
 local to_bcd = request('!.number.to_bcd')
 local set_bit = request('!.number.set_bit')
 local splice_bits = request('!.number.splice_bits')
@@ -65,7 +70,9 @@ return
     result[15] = set_bit(result[15], 3, rec.fixed_wave_32k_enabled)
     result[15] = set_bit(result[15], 7, rec.clock_was_stopped)
 
-    result[17], result[18] = compile_temperature(rec.temperature)
+    local temp_int, temp_frac = compile_temperature(rec.temperature)
+    result[17] = temp_int
+    result[18] = splice_bits(0, 6, 7, temp_frac)
 
     return result
   end
