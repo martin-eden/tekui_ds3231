@@ -8,8 +8,8 @@ return
         'actions',
         {},
 
-        button('_Load', {onClick = self:create_load_handler()}),
-        button('_Save', {onClick = self:create_save_handler()}),
+        button('_Load', {onClick = self:spawn_load()}),
+        button('_Save', {onClick = self:spawn_save()}),
         ver_group(
           'shortcuts',
           {},
@@ -20,7 +20,7 @@ return
           ),
           button(
             'Get _temperature',
-            {onClick = self:create_get_temp_handler()}
+            {onClick = self:spawn_get_temp()}
           )
         )
       )
