@@ -47,7 +47,11 @@ License: GPLv3
 
 ## Usage
 
-1. Connect board to USB port.
+1. Pre-flight checks.
+    1. Burn `StandardFirmata` snippet (in IDE it's under `examples/Firmata/`).
+    2. Close Arduino IDE.
+    3. Connect DS3231 module. Check wiring.
+    4. Connect board to USB port.
 2. Run main file:
 
    `$ lua run.lua`
