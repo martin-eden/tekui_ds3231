@@ -14,7 +14,7 @@ self.rtc_handler:init()
 -- local t2s = request('!.table.as_string')
 local compile_rtc = request('!.formats.ds3231.compile')
 
-local create_window = request('tui_tools.window')
+local create_window = request('!.frontend.tekui.window')
 
 local create_main_window =
   function(content)

@@ -1,5 +1,5 @@
-local ver_group = request('^.^.tui_tools.ver_group')
-local button = request('^.^.tui_tools.button')
+local ver_group = request('!.frontend.tekui.ver_group')
+local button = request('!.frontend.tekui.button')
 
 return
   function(self)
