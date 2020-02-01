@@ -1,5 +1,5 @@
-local hor_group = request('^.^.tui_tools.hor_group')
-local ver_group = request('^.^.tui_tools.ver_group')
+local hor_group = request('!.frontend.tekui.hor_group')
+local ver_group = request('!.frontend.tekui.ver_group')
 
 local create_moment_block = request('create_moment_block')
 local create_alarm_1_block = request('create_alarm_1_block')

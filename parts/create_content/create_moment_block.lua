@@ -1,9 +1,9 @@
-local hor_group = request('^.^.tui_tools.hor_group')
-local ver_group = request('^.^.tui_tools.ver_group')
-local text_label = request('^.^.tui_tools.text_label')
-local text_label_ra = request('^.^.tui_tools.text_label_ra')
-local input_box = request('^.^.tui_tools.input_box')
-local checkbox = request('^.^.tui_tools.checkbox')
+local hor_group = request('!.frontend.tekui.hor_group')
+local ver_group = request('!.frontend.tekui.ver_group')
+local text_label = request('!.frontend.tekui.text_label')
+local text_label_ra = request('!.frontend.tekui.text_label_ra')
+local input_box = request('!.frontend.tekui.input_box')
+local checkbox = request('!.frontend.tekui.checkbox')
 
 return
   function(self)
