@@ -14,34 +14,17 @@ License: GPLv3
 ## Requirements
 
   * Linux
-  * Lua 5.3 (or maybe 5.4)
-  * [Tek-UI][tek-ui]
+  * Lua 5.3
+  * [Tek-UI][tekui-setup]
   * Arduino-compatible board
     * with DS3231 module connected
     * StandardFirmata code burned in Arduino
 
 ## Installation
 
-* Install Tek-UI
-
-  ```
-  $ wget http://tekui.neoscientists.org/releases/tekui-1.12-r1.tgz
-  $ tar -xvf tekui-1.12-r1.tgz
-  $ cd tekui-1.12-r1
-  $ sudo make LUAVER=5.3 all install clean
-  ```
-  Test of successful installation: `$ lua -l tek.ui`.
-
 * Clone this repository.
 
 ## Deinstallation
-
-* Remove Tek-UI
-
-  ```
-  $ sudo rm -rf /usr/local/lib/lua/5.3/tek
-  $ sudo rm -rf /usr/local/share/lua/5.3/tek
-  ```
 
 * Delete cloned repository.
 
@@ -49,7 +32,7 @@ License: GPLv3
 
 1. Pre-flight checks.
     1. Burn `StandardFirmata` snippet (in IDE it's under `examples/Firmata/`).
-    2. Close Arduino IDE.
+    2. Close Arduino IDE serial monitor window.
     3. Connect DS3231 module. Check wiring.
     4. Connect board to USB port.
 2. Run main file:
@@ -69,6 +52,7 @@ License: GPLv3
 * [My other repositories][repos]
 
 [tek-ui]: http://tekui.neoscientists.org/
+[tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
 [gui_image]: ../master/doc_parts/gui.png
 [details]: ../master/doc_parts/details.md
 [repos]: https://github.com/martin-eden/contents
