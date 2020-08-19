@@ -18,7 +18,7 @@ License: GPLv3
   * [Tek-UI][tekui-setup]
   * Arduino-compatible board
     * with DS3231 module connected
-    * StandardFirmata code burned in Arduino
+  * Arduino IDE
 
 ## Installation
 
@@ -31,7 +31,7 @@ License: GPLv3
 ## Usage
 
 1. Pre-flight checks.
-    1. Burn `StandardFirmata` snippet (in IDE it's under `examples/Firmata/`).
+    1. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`).
     2. Close Arduino IDE serial monitor window.
     3. Connect DS3231 module. Check wiring.
     4. Connect board to USB port.
