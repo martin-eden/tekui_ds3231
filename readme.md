@@ -14,7 +14,7 @@ License: GPLv3
 ## Requirements
 
   * Linux
-  * Lua 5.3
+  * [Lua 5.3][lua53-setup]
   * [Tek-UI][tekui-setup]
   * Arduino-compatible board
     * with DS3231 module connected
@@ -53,6 +53,7 @@ License: GPLv3
 
 [tek-ui]: http://tekui.neoscientists.org/
 [tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
+[lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
 [gui_image]: ../master/doc_parts/gui.png
 [details]: ../master/doc_parts/details.md
 [repos]: https://github.com/martin-eden/contents
