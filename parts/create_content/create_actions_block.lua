@@ -1,27 +1,14 @@
+local hor_group = request('!.frontend.tekui.hor_group')
 local ver_group = request('!.frontend.tekui.ver_group')
 local button = request('!.frontend.tekui.button')
 
 return
   function(self)
     return
-      ver_group(
-        'actions',
+      hor_group(
+        nil,
         {},
-
         button('_Load', {onClick = self:spawn_load()}),
-        button('_Save', {onClick = self:spawn_save()}),
-        ver_group(
-          'shortcuts',
-          {},
-
-          button(
-            'Set _current time',
-            {onClick = self:spawn_set_cur_time()}
-          ),
-          button(
-            'Get _temperature',
-            {onClick = self:spawn_get_temp()}
-          )
-        )
+        button('_Save', {onClick = self:spawn_save()})
       )
   end

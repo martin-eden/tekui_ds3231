@@ -1,10 +1,23 @@
-local update_moment_presentation = request('update_moment_presentation')
-local update_alarm_1_presentation = request('update_alarm_1_presentation')
-local update_alarm_2_presentation = request('update_alarm_2_presentation')
+local represent_moment = request('represent_moment')
+local represent_alarm_1 = request('represent_alarm_1')
+local represent_alarm_2 = request('represent_alarm_2')
+local represent_other = request('represent_other')
 
 return
-  function(app)
-    update_moment_presentation(app)
-    update_alarm_1_presentation(app)
-    update_alarm_2_presentation(app)
+  function(self, app)
+    local rtc_rec = self:get_fields(app)
+
+    local run_representer =
+      function(elem_id, presenter)
+        local is_ok, result = pcall(presenter, rtc_rec)
+        if not is_ok then
+          result = "Can't represent. Bad data?"
+        end
+        app:getById(elem_id):setValue('Text', result)
+      end
+
+    run_representer('moment_presentation', represent_moment)
+    run_representer('alarm_1_presentation', represent_alarm_1)
+    run_representer('alarm_2_presentation', represent_alarm_2)
+    run_representer('other_presentation', represent_other)
   end

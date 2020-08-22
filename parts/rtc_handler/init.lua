@@ -1,4 +1,5 @@
-local tty_set_non_blocking_read= request('!.mechs.tty.set_non_blocking_read')
+local tty_set_non_blocking_read =
+  request('!.mechs.tty.set_non_blocking_read')
 local file_exists = request('!.file.exists')
 local sleep = request('!.system.sleep')
 
