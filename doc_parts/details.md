@@ -1,7 +1,5 @@
 # Details and Explanations
 
-* [DS3231 datasheet][datasheet]
-
 ## Thoughts About Datasheet
 
 * Strong points
@@ -12,7 +10,7 @@
     typical digital clock. 2-digit year, month number, month date,
     day of week number, hour, minute, second.
 
-    These numbers stored in BCD format so 23 is stored ad 0x23.
+    These numbers stored in BCD format so 23 is stored as 0x23.
 
   * Little endianess
 
@@ -60,25 +58,6 @@
     bits of several bytes. Also they failed to give logical names
     to values.
 
-* Weak points
-
-  * Alarms are useless
-
-    Okay, you have two moments in future called "alarms". When
-    one of these moment occurs, it sets "occurred" flag for that
-    alarm and sets "BBSQW" output pin from HIGH to LOW.
-
-    Problem is that that pin value will remain at LOW forever, till
-    "occurred" flag will be cleared programmatically.
-
-    And to do it programmatically you need two I2C wires: SCL, SDA.
-    Which defeats whole purpose of alarm pin as now your overseer
-    device can not only clear "occurred" flag but read time, implement
-    custom logic and manage output pin himself.
-
-    Setting something to another state forever is suitable only for
-    things like detonators.
-
 
 ## Graphical Interface Principles and Decisions
 
@@ -89,20 +68,13 @@ We expect to work with typical values complying with specification.
 * BCD vs bytes
 
   Although what is really stored in module memory is 8-bit bytes,
-  we limit some fields to BCD range (0x00..0x99).
+  we limit some fields to BCD range (each nibble value is 0..9).
 
 
 ### Simple > Useful ?
 
 If something requires "too much" effort to implement, prefer simplest
 realization. But think twice.
-
-* Moment check
-
-  It is possible to verify given date and time on client side but
-  too boring and laborious.
-
-  ![moment fields][moment]
 
 * Custom wave frequency
 
@@ -122,7 +94,5 @@ introduces redundancy or spoils sleek interface.
 
   ![am/pm vs 24][12_24]
 
-[datasheet]: DS3231.pdf
-[moment]: moment.png
 [freq]: freq.png
 [12_24]: 12_24.png

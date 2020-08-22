@@ -1,13 +1,15 @@
 # RTC DS3231 GUI
 
-This project provides editable graphical representation of state of
-real-time clock implemented on DS3231 IC. It allows you to set by hand
-all parameters of clock module for your Arduino project without
-writing custom C code. Good for checking and prototyping.
+Editable state of DS3231 real-time clock.
 
-![main window][gui_image]
+![page 1][gui_page_1]
+![page 2][gui_page_2]
+![page 3][gui_page_3]
+![page 4][gui_page_4]
 
-Status: *initial release*
+Status: pre-release
+
+Version: 2.0
 
 License: GPLv3
 
@@ -18,7 +20,7 @@ License: GPLv3
   * [Tek-UI][tekui-setup]
   * Arduino-compatible board
     * with DS3231 module connected
-  * Arduino IDE
+  * `StandardFirmata` burned in board (delivered with Arduino IDE)
 
 ## Installation
 
@@ -45,15 +47,27 @@ License: GPLv3
 
    `$ lua run.lua /dev/ttyUSB2`
 
+If you don't have Arduino or DS3231 and just wish to take a look at interface, checkout [virtual_rtc] branch.
+
+### Usage details
+
+If you use alarm and it have hour time, alarm will trigger *iff*
+hour is stored in same format as moment time: 12h AM/PM or 24h.
 
 ## See also
 
+* [DS3231 datasheet][datasheet]
 * [Details and explanataions][details]
 * [My other repositories][repos]
 
 [tek-ui]: http://tekui.neoscientists.org/
 [tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
 [lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
-[gui_image]: ../master/doc_parts/gui.png
-[details]: ../master/doc_parts/details.md
+[gui_page_1]: doc_parts/gui_1.png
+[gui_page_2]: doc_parts/gui_2.png
+[gui_page_3]: doc_parts/gui_3.png
+[gui_page_4]: doc_parts/gui_4.png
+[virtual_rtc]: https://github.com/martin-eden/tekui_ds3231/tree/virtual_rtc
+[datasheet]: doc_parts/DS3231.pdf
+[details]: doc_parts/details.md
 [repos]: https://github.com/martin-eden/contents

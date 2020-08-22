@@ -1,98 +1,102 @@
 local hor_group = request('!.frontend.tekui.hor_group')
 local ver_group = request('!.frontend.tekui.ver_group')
 local text_label = request('!.frontend.tekui.text_label')
-local text_label_ra = request('!.frontend.tekui.text_label_ra')
 local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
+local radio_mark = request('!.frontend.tekui.radio_button')
 
-local correct_checkboxes = request('^.correct_checkboxes')
+local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')
 
-local update_alarm_1_multiplicity =
-  function(app)
-    local checkboxes =
-      {
-        'alarm_1_ignore_date_dow',
-        'alarm_1_ignore_hour',
-        'alarm_1_ignore_minute',
-        'alarm_1_ignore_second',
-      }
-    correct_checkboxes(app, checkboxes)
+local correct_flags_any =
+  spawn_correct_alarm_flags(
+    {
+      'alarm_1_day_any',
+      'alarm_1_hour_any',
+      'alarm_1_minute_any',
+      'alarm_1_second_any',
+      next_offset = -1,
+    }
+  )
+
+local correct_flags_spec =
+  spawn_correct_alarm_flags(
+    {
+      'alarm_1_day_spec',
+      'alarm_1_hour_spec',
+      'alarm_1_minute_spec',
+      'alarm_1_second_spec',
+      next_offset = 1,
+    }
+  )
+
+local create_any_rb =
+  function(elem_id)
+    return
+      radio_mark(
+        'any', nil, elem_id, {onSelect = correct_flags_any}
+      )
+  end
+
+local create_spec_rb =
+  function(elem_id)
+    return
+      radio_mark(
+        'specific', nil, elem_id, {onSelect = correct_flags_spec}
+      )
   end
 
 return
   function(self)
     return
       ver_group(
-        '1',
-        {},
-
+        nil,
+        {Width = self.ui_width},
         hor_group(
-          'multiplicity',
-          {Columns = 2},
-
-          text_label_ra('ignore date/dow'),
-          checkbox(
-            '', false, 'alarm_1_ignore_date_dow',
-            {onSelect = update_alarm_1_multiplicity}
-          ),
-
-          text_label_ra('ignore hour'),
-          checkbox(
-            '', false, 'alarm_1_ignore_hour',
-            {onSelect = update_alarm_1_multiplicity}
-          ),
-
-          text_label_ra('ignore minute'),
-          checkbox(
-            '', false, 'alarm_1_ignore_minute',
-            {onSelect = update_alarm_1_multiplicity}
-          ),
-
-          text_label_ra('ignore second'),
-          checkbox(
-            '', false, 'alarm_1_ignore_second',
-            {onSelect = update_alarm_1_multiplicity}
+          '',
+          {},
+          text_label(
+            '',
+            {
+              Style = self.ui_status_style,
+              Id = 'alarm_1_presentation',
+            }
           )
         ),
-
-        hor_group(
-          'offset',
-          {Columns = 2},
-
-          text_label_ra('date/dow'),
-          input_box('', 'alarm_1_date_dow'),
-
-          text_label_ra('is date, not dow'),
-          checkbox('', false, 'alarm_1_is_date_not_dow'),
-
-          text_label_ra('hour'),
-          input_box('', 'alarm_1_hour'),
-
-          text_label_ra('use AM/PM format'),
-          checkbox('', false, 'alarm_1_is_12h_format'),
-
-          text_label_ra('minute'),
-          input_box('', 'alarm_1_minute'),
-
-          text_label_ra('second'),
-          input_box('', 'alarm_1_second')
-        ),
-
+        checkbox('enable output', false, 'alarm_1_enabled'),
+        checkbox('occurred', false, 'alarm_1_occurred'),
         hor_group(
           nil,
-          {Columns = 2},
-
-          text_label_ra('enable output'),
-          checkbox('', false, 'alarm_1_enabled'),
-
-          text_label_ra('occurred'),
-          checkbox('', false, 'alarm_1_occurred')
-        ),
-
-        hor_group(
-          'representation',
           {},
-          text_label('', {Id = 'alarm_1_presentation'})
-        )
+          ver_group(
+            'day',
+            {Width = 'free'},
+            create_any_rb('alarm_1_day_any'),
+            create_spec_rb('alarm_1_day_spec'),
+            input_box('', 'alarm_1_date_dow')
+          ),
+          ver_group(
+            'hour',
+            {Width = 'free'},
+            create_any_rb('alarm_1_hour_any'),
+            create_spec_rb('alarm_1_hour_spec'),
+            input_box('', 'alarm_1_hour')
+          ),
+          ver_group(
+            'minute',
+            {Width = 'free'},
+            create_any_rb('alarm_1_minute_any'),
+            create_spec_rb('alarm_1_minute_spec'),
+            input_box('', 'alarm_1_minute')
+          ),
+          ver_group(
+            'second',
+            {Width = 'free'},
+            create_any_rb('alarm_1_second_any'),
+            create_spec_rb('alarm_1_second_spec'),
+            input_box('', 'alarm_1_second')
+          )
+        ),
+        checkbox('day of month, not week', false, 'alarm_1_is_date_not_dow'),
+        checkbox('AM/PM hour format', false, 'alarm_1_store_hour_in_12h')
       )
   end
