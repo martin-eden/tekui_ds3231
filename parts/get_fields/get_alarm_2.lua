@@ -24,7 +24,6 @@ return
             ignore_hour = get_checkbox('alarm_2_hour_any'),
             ignore_minute = get_checkbox('alarm_2_minute_any'),
             is_date_not_dow = get_checkbox('alarm_2_is_date_not_dow'),
-            store_hour_in_12h = get_checkbox('alarm_2_store_hour_in_12h'),
           },
       }
 

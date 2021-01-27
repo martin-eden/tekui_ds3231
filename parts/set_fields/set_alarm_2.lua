@@ -54,8 +54,4 @@ return
       'alarm_2_is_date_not_dow',
       rtc_rec.alarm_2.is_date_not_dow
     )
-    set_checkbox(
-      'alarm_2_store_hour_in_12h',
-      rtc_rec.alarm_2.store_hour_in_12h
-    )
 end

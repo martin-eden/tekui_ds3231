@@ -45,7 +45,7 @@ return
             break
           end
         end
-        assert(our_index)
+        assert(our_index, 'Index ' .. our_id .. ' is not found.')
 
         local next_index = our_index + checkboxes.next_offset
         local next_id = checkboxes[next_index]

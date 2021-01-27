@@ -13,7 +13,11 @@ return
         if not is_ok then
           result = "Can't represent. Bad data?"
         end
-        app:getById(elem_id):setValue('Text', result)
+        if is_nil(app:getById(elem_id)) then
+          -- print('Failed to get app:getById() for ' .. elem_id)
+        else
+          app:getById(elem_id):setValue('Text', result)
+        end
       end
 
     run_representer('moment_presentation', represent_moment)
