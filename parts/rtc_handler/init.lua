@@ -14,7 +14,7 @@ return
   function(self)
     local orig_tty_name = self.tty_name
     repeat
-      print(('Trying to open "%s".'):format(self.tty_name))
+      print(('Opening "%s".'):format(self.tty_name))
 
       local is_ok, err_msg
       if not file_exists(self.tty_name) then
