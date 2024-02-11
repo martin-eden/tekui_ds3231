@@ -1,6 +1,6 @@
 # RTC DS3231 GUI
 
-Editable state of DS3231 real-time clock.
+Editable state of [DS3231 real-time clock][ds3231_images].
 
 ![page moment][gui_moment]
 ![page alarm_1][gui_alarm_1]
@@ -72,3 +72,4 @@ hour is stored in same format as moment time: 12h AM/PM or 24h.
 [datasheet]: https://github.com/martin-eden/doc.ds3231/raw/master/DS3231.pdf
 [details]: doc_parts/details.md
 [repos]: https://github.com/martin-eden/contents
+[ds3231_images]: https://duckduckgo.com/?q=ds3231&iax=images&ia=images
