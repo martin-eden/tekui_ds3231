@@ -1,11 +1,20 @@
 #!/bin/lua
 
-package.path = package.path .. ';../../../?.lua'
+-- Root script
+
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-04-27
+]]
+
+--[[ Develop
+package.path = package.path .. ';../../?.lua'
+--]]
 require('workshop.base')
 
 local tui = require('tek.ui')
 
--- local t2s = request('!.table.as_string')
+-- Imports:
 local self = request('parts.interface')
 local create_window = request('!.frontend.tekui.window')
 local special_cbox_coloring = request('parts.special_cbox_coloring')
@@ -43,3 +52,8 @@ self:set_fields(app, rtc_rec)
 
 main_window:setValue('Status', 'show')
 app:run()
+
+--[[
+  2019
+  2020
+]]

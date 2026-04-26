@@ -1,4 +1,12 @@
-local merge = request('!.table.merge')
+-- [GUI] Save current time to device
+
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-04-27
+]]
+
+-- Imports:
+local patch = request('!.table.patch')
 
 local create_moment_record =
   function(cur_time)
@@ -31,11 +39,11 @@ local set_cur_moment =
 
     local moment = create_moment_record(cur_time)
 
-    merge(rtc_rec.moment, moment)
+    patch(rtc_rec.moment, moment)
     rtc_rec.at_battery.clock_was_stopped = false
   end
 
-return
+local apply_current_time =
   function(self)
     return
       function(app)
@@ -45,3 +53,11 @@ return
         self:set_fields(app, self.rtc_handler:load_rtc())
       end
   end
+
+-- Export:
+return apply_current_time
+
+--[[
+  2019
+  2022
+]]

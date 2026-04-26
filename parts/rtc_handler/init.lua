@@ -1,16 +1,24 @@
-local tty_set_non_blocking_read =
-  request('!.mechs.tty.set_non_blocking_read')
-local file_exists = request('!.file.exists')
-local sleep = request('!.system.sleep')
+-- Open device file and setup for I2C
 
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-04-27
+]]
+
+-- Imports:
+local set_tty_params = request('!.mechs.tty.set_params')
+local file_exists = request('!.file_system.file.exists')
+local sleep = request('!.system.sleep')
 local get_next_tty_name = request('get_next_tty_name')
 local firmata_init_i2c = request('firmata_init_i2c')
 
-local init_delay = 3.50
+-- Tested warmup delays: 3.7- 3.9+
+local init_delay = 4.2
 local baud = 57600
 local read_timeout = 0.2
 
-return
+-- Open TTY and setup Firmata for I2C
+local open_and_init_rtc_device =
   function(self)
     local orig_tty_name = self.tty_name
     repeat
@@ -23,10 +31,12 @@ return
       else
         is_ok, err_msg =
           pcall(
-            tty_set_non_blocking_read,
+            set_tty_params,
             self.tty_name,
-            read_timeout,
-            baud
+            {
+              ReadTimeout_S = read_timeout,
+              Speed_Bps = baud,
+            }
           )
       end
 
@@ -57,3 +67,10 @@ return
 
     firmata_init_i2c(self)
   end
+
+-- Export:
+return open_and_init_rtc_device
+
+--[[
+  2020
+]]
