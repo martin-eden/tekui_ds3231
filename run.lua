@@ -4,7 +4,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-27
+  Last mod.: 2026-04-29
 ]]
 
 --[[ Develop
@@ -12,48 +12,138 @@ package.path = package.path .. ';../../?.lua'
 --]]
 require('workshop.base')
 
-local tui = require('tek.ui')
+local Config =
+  {
+    DeviceFileName = arg[1],
+    IsVirtualDevice = (arg[1] == '--virtual'),
+  }
 
 -- Imports:
-local self = request('parts.interface')
-local create_window = request('!.frontend.tekui.window')
-local special_cbox_coloring = request('parts.special_cbox_coloring')
+local Widget = request('Widget.Interface')
+local normalize_file_name = request('!.file_system.file.normalize_name')
+local create_window = request('!.frontend.tekui.create_window')
+local special_checkbox_coloring = request('Widget.special_checkbox_coloring')
+local RawDataProvider = request('Widget.RawDataProvider.Interface')
+local RtcDataProvider = request('Widget.RtcDataProvider.Interface')
 
-if arg[1] then
-  self.rtc_handler.tty_name = arg[1]
-end
+local requires_tekui_msg = [[
+This tool requires TekUI GUI framework
 
-self.rtc_handler:init()
+TekUI site:
 
-local create_main_window =
-  function(content)
-    local title = ('DS3231 on %s'):format(self.rtc_handler.tty_name)
-    return create_window(title, {}, content)
+  http://tekui.neoscientists.org/
+
+TekUI package:
+
+  http://tekui.neoscientists.org/releases/tekui-1.12-r1.tgz
+
+My notes how to install:
+
+  https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
+]]
+
+local has_tekui =
+  function()
+    return (pcall(require, 'tek.ui'))
   end
 
-local main_window = create_main_window(self:create_content())
+if not has_tekui() then
+  print(requires_tekui_msg)
 
-local app = tui.Application:new({AuthorStyles = special_cbox_coloring})
-tui.Application.connect(main_window)
-app:addMember(main_window)
-
-self:install_presentation_updaters(app)
-
-local rtc_rec = self.rtc_handler:load_rtc()
-if not rtc_rec then
-  error(
-    "Can't get RTC record.\n" ..
-    '  Check wiring.\n' ..
-    '  Check that "StandardFirmata" sketch is burned into Arduino.'
-  )
+  return
 end
 
-self:set_fields(app, rtc_rec)
+local usage_msg = [[
+GUI to display and edit data of hardware clock module DS331
 
-main_window:setValue('Status', 'show')
-app:run()
+Usage:
+
+  lua run.lua <DevicePath>
+                   ┬
+                   ├── "/dev/ttyUSB<N>" -- use device at that port
+                   └── "--virtual" -- use virtual device (data in local file)
+]]
+
+if not arg[1] then
+  print(usage_msg)
+
+  return
+end
 
 --[[
-  2019
-  2020
+  TekUI import
+
+  It's placed here to be after code check for it's presence and
+  graceful failure.
+]]
+local TekUi = require('tek.ui')
+
+local is_virtual_device = Config.IsVirtualDevice
+local device_file_name = normalize_file_name(Config.DeviceFileName)
+
+local init_done =
+  RawDataProvider:Init(
+    {
+      UseVirtualDevice = is_virtual_device,
+      DeviceFileName = device_file_name,
+    }
+  )
+
+if not init_done then
+  print('Failed to initialize device')
+
+  return
+end
+
+RtcDataProvider.RawDataProvider = RawDataProvider
+
+Widget.RtcDataProvider = RtcDataProvider
+
+local create_main_window =
+  function(Content)
+    local title
+    if is_virtual_device then
+      title = 'Virtual DS3231'
+    else
+      title = string.format('DS3231 on %s', device_file_name)
+    end
+
+    return create_window(title, {}, Content)
+  end
+
+local MainWindow = create_main_window(Widget:CreateContent())
+
+TekUi.Application.connect(MainWindow)
+
+local Application =
+  TekUi.Application:new(
+    { AuthorStyles = special_checkbox_coloring }
+  )
+
+Application:addMember(MainWindow)
+
+if not Widget:Init(Application) then
+  print('Failed to load data')
+  if not is_virtual_device then
+    print([[
+
+  * Check wiring
+  * Check that "StandardFirmata" sketch is burned into Arduino
+]]
+    )
+  end
+
+  return
+end
+
+MainWindow:setValue('Status', 'show')
+
+Application:run()
+
+--[[
+  2019 #
+  2020 # #
+  2026-04-27
+  2026-04-28
+  2026-04-29
 ]]
