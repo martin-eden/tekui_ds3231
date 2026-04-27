@@ -1,4 +1,4 @@
-local workshop_path = '../../../?.lua'
+local workshop_path = '../../?.lua'
 package.path = package.path .. ';' .. workshop_path
 
 require('workshop.base')
