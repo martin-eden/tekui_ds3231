@@ -1,4 +1,6 @@
-# RTC DS3231 GUI
+## RTC DS3231 GUI
+
+(2019, 2020, 2024, 2026)
 
 Editable state of [DS3231 real-time clock][ds3231_images].
 
@@ -6,12 +8,6 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ![page alarm_1][gui_alarm_1]
 ![page alarm_2][gui_alarm_2]
 ![page other][gui_other]
-
-Status: release
-
-Version: 2.0
-
-License: GPLv3
 
 ## Requirements
 
@@ -22,13 +18,9 @@ License: GPLv3
     * with DS3231 module connected
   * `StandardFirmata` burned in board (delivered with Arduino IDE)
 
-## Installation
+## Install/remove
 
-* Clone this repository.
-
-## Deinstallation
-
-* Delete cloned repository.
+Clone this repository / Delete directory.
 
 ## Usage
 
