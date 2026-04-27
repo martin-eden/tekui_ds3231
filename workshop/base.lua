@@ -1,6 +1,11 @@
---[[
-  Lua base libraries extension. Used almost in any piece of my code.
+-- Personal framework bootloader
 
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-04-23
+]]
+
+--[[
   This module installs global function "request" which is based on
   "require" and makes possible relative module names.
 
@@ -8,14 +13,13 @@
   get dependencies list for any module. Which is used to create
   deploys without unused code.
 
-  Price for tracking dependencies  is global table "dependencies"
+  Price for tracking dependencies is global table "dependencies"
   and function "get_require_name".
 
   Lastly, global functions are added for convenience. Such functions
   are "new" and families of "is_<type>" and "assert_<type>".
 ]]
 
--- Export request function:
 local split_name =
   function(qualified_name)
     local prefix_name_pattern = '^(.+%.)([^%.]+)$'  -- a.b.c --> (a.b.) (c)
@@ -51,13 +55,13 @@ local unite_prefixes =
   end
 
 local names = {}
-local deep = 1
+local depth = 1
 
 local get_caller_prefix =
   function()
     local result = ''
-    if names[deep] then
-      result = names[deep].prefix
+    if names[depth] then
+      result = names[depth].prefix
     end
     return result
   end
@@ -65,21 +69,21 @@ local get_caller_prefix =
 local get_caller_name =
   function()
     local result = 'anonymous'
-    if names[deep] then
-      result = names[deep].prefix .. names[deep].name
+    if names[depth] then
+      result = names[depth].prefix .. names[depth].name
     end
     return result
   end
 
 local push =
   function(prefix, name)
-    deep = deep + 1
-    names[deep] = {prefix = prefix, name = name}
+    depth = depth + 1
+    names[depth] = {prefix = prefix, name = name}
   end
 
 local pop =
   function()
-    deep = deep - 1
+    depth = depth - 1
   end
 
 local dependencies = {}
@@ -119,15 +123,54 @@ local request =
     return table.unpack(results)
   end
 
-if not _G.request then
+local IsFirstRun = (_G.request == nil)
+
+if IsFirstRun then
   _G.request = request
   _G.dependencies = dependencies
   _G.get_require_name = get_require_name
+
+  --[[
+    At this point we installed "request()", so it's usable from
+    outer code.
+
+    Also we made global "dependencies{}" and "get_require_name()".
+    "dependenices" is optional and not mission-critical. But stores
+    inter-module call edges which are tricky to obtain other ways.
+    "get_require_name()" is part of "request()" internal machinery.
+    Both has niche uses in my code tree tools. And they can't be
+    moved to module because it's request() that provides modules.
+  ]]
+  --[[
+    Below we call optional modules which install additional
+    global functions.
+
+    Functions made global because they are widely used in my code.
+
+    They are inside other files. We use freshly added "request()"
+    to load them and add them to dependencies of this module.
+
+    We need add record to call stack with our name because these
+    calls of "request()" are inside "if", so the call will not be
+    done until actual execution.
+  ]]
+
   -- First element is invocation module name, second - module file path
-  local base_require_name = (...)
-  push('', base_require_name)
+  local our_require_name = (...)
+
+  push('', our_require_name)
+
   request('!.system.install_is_functions')()
   request('!.system.install_assert_functions')()
   _G.new = request('!.table.new')
+
   pop()
 end
+
+--[[
+  2016-06
+  2017-09
+  2018-02
+  2018-05
+  2024-03
+]]

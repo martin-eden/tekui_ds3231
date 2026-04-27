@@ -1,37 +1,59 @@
+-- Function to create "is_<type>" family of global functions
+
 --[[
-  Function to spawn "is_<type>" family of global functions.
+  Author: Martin Eden
+  Last mod.: 2026-04-22
 ]]
 
-local data_types = request('!.lua.data_types')
+--[[
+  It spawns "is_nil", "is_boolean", ... for all Lua data types.
+  Also it spawns "is_integer" and "is_float" for number type.
+]]
 
-local generic_is =
+-- Imports:
+local DataTypes = request('!.lua.data_types')
+local MathTypes = request('!.lua.data_mathtypes')
+
+local type_is =
   function(type_name)
     return
       function(val)
-        local result, err_msg
-        result = (type(val) == type_name)
-        if not result then
-          err_msg =
-            ('Value "%s" has type <%s>, not <%s>.'):
-            format(val, type(val), type_name)
-        end
-        return result, err_msg
+        return (type(val) == type_name)
       end
   end
 
-return
+local number_is =
+  function(type_name)
+    return
+      function(val)
+        --[[
+          math.type() throws error for non-number types.
+          This function returns "false" for non-number types.
+        ]]
+        if not is_number(val) then
+          return false
+        end
+        return (math.type(val) == type_name)
+      end
+  end
+
+local install_is_functions =
   function()
-    for _, type_name in ipairs(data_types) do
-      _G['is_' .. type_name] = generic_is(type_name)
+    for _, type_name in ipairs(DataTypes) do
+      _G['is_' .. type_name] = type_is(type_name)
     end
-
-    _G.is_integer =
-      function(n)
-        local result, err_msg
-        result = (math.type(n) == 'integer')
-        if not result then
-          err_msg = ('math.type(<%s> %s) ~= "integer"'):format(type(n), n)
-        end
-        return result, err_msg
-      end
+    for _, math_type_name in ipairs(MathTypes) do
+      _G['is_' .. math_type_name] = number_is(math_type_name)
+    end
   end
+
+-- Export:
+return install_is_functions
+
+--[[
+  2018-02
+  2020-01
+  2022-01
+  2024-03
+  2026-04-22
+]]

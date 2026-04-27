@@ -1,11 +1,27 @@
---[[
-  Return shell command to sleep given number of seconds.
-  Seconds may be fractional number.
+-- Return shell command to sleep for given amount of seconds
 
-  GNU/bash assumed.
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-04-23
 ]]
 
+-- Imports:
+local glue_words = request('!.concepts.words.to_string')
+
+-- Export:
 return
-  function(secs)
-    return ('sleep %.2f'):format(secs)
+  function(seconds)
+    -- Seconds may be fractional number
+    local Command =
+      {
+        'sleep',
+        string.format('%.2f', seconds),
+      }
+
+    return glue_words(Command)
   end
+
+--[[
+  2020 #
+  2026-04-17
+]]

@@ -28,5 +28,7 @@ local stages =
 
 return
   function(data, do_verify, do_validate)
+    assert_table(data)
+
     return generic_convert(data, stages, do_verify, do_validate)
   end
