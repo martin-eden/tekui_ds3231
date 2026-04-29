@@ -55,3 +55,7 @@
 
     So instead of using one more byte of memory engineers used high
     bits of several bytes.
+
+  * If you use alarm and it have hour time, alarm will trigger *iff*
+    hour is stored in same format as moment time: 12h AM/PM or 24h.
+
