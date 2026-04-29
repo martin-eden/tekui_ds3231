@@ -1,8 +1,8 @@
--- Save current time to device
+-- Set UI moment's fields to current time
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-11
 ]]
 
 -- Imports:
@@ -61,8 +61,6 @@ local func_set_cur_time =
     -- Time is correct now, clear "bad time" flag
     Me.Data.Core.time_is_spoiled = false
 
-    Me:DataToRaw()
-    Me:DataFromRaw()
     Me:DataToUi()
   end
 
@@ -75,4 +73,5 @@ return func_set_cur_time
   2026-04-27
   2026-04-28
   2026-05-10
+  2026-05-11
 ]]
