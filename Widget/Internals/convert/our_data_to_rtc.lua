@@ -10,7 +10,6 @@ local bcd_from_byte = request('!.convert.bcd_from_byte')
 local to_ampm_hour = request('!.concepts.daytime.to_ampm_hour')
 local set_bit = request('!.number.set_bit')
 local set_bits = request('!.number.set_bits')
-local constrain_number = request('!.number.constrain')
 
 local get_hour_data_from_hour =
   function(hour, is_ampm)
@@ -29,8 +28,6 @@ local get_hour_data_from_hour =
 
 local set_temperature =
   function(temperature)
-    temperature = constrain_number(temperature, -128, 127.75)
-
     -- Round to quarters:
     temperature = math.modf(temperature * 4) / 4
 

@@ -9,6 +9,17 @@
 local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
 local ws_get_input_number = request('!.frontend.tekui.get_input_number')
 local prefix_args = request('!.function.prefix_args')
+local constrain_number = request('!.number.constrain')
+
+local constrain_temperature =
+  function(temperature)
+    return constrain_number(temperature, -128, 127.75)
+  end
+
+local constrain_speed_trim =
+  function(speed_trim)
+    return constrain_number(speed_trim, -128, 127)
+  end
 
 local get_other_settings_rec =
   function(TekUi_App)
@@ -36,10 +47,10 @@ local get_other_settings_rec =
         output_is_from_alarms = get_checkbox('output_is_from_alarms'),
         enable_wave_32k = get_checkbox('enable_wave_32k'),
 
-        temperature = get_input_number('temperature'),
+        temperature = constrain_temperature(get_input_number('temperature')),
         get_temperature = get_checkbox('get_temperature'),
 
-        speed_trim = get_input_number('speed_trim'),
+        speed_trim = constrain_speed_trim(get_input_number('speed_trim')),
 
         wave_freq_num = get_wave_freq_num(),
       }
