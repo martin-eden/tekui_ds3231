@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-09
+  Last mod.: 2026-05-11
 ]]
 
 -- Imports:
@@ -54,7 +54,7 @@ return
       if Alarm.is_day then
         add_to_list(Result, 'day')
       else
-        add_to_list(Result, 'dow')
+        add_to_list(Result, 'date')
       end
 
       add_to_list(Result, string.format('%d,', Alarm.dateday))
