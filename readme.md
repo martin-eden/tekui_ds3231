@@ -13,6 +13,8 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ## Usage
 
 ```
+$ lua run.lua
+
 GUI to display and edit data of hardware clock module DS331
 
 Usage:
@@ -25,14 +27,16 @@ Usage:
 ```
 
 If you just want to test GUI without any Arduino and DS3231 use
-`--virtual` command-line arg.
+```
+$ lua run.lua --virtual
+```
 
 1. Pre-flight checks
     1. Connect board to USB port
     2. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`)
     3. Close Arduino IDE serial monitor window
     4. Connect DS3231 module. Check wiring
-2. Run main file:
+2. Run
 
    ```
    $ lua run.lua /dev/ttyUSB0
