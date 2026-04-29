@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-04-30
 ]]
 
 --[[
@@ -16,7 +16,7 @@ local install_presentation_updaters =
   function(Me, TekUi_App)
     local update_representations =
       function(TekUi_App)
-        local num_calls_before_update = 10
+        local num_calls_before_update = 20
         local num_calls = 0
 
         while true do
