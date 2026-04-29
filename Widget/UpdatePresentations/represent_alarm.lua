@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-04-29
 ]]
 
 -- Imports:
@@ -21,8 +21,8 @@ return
       Alarm.ignore_hour and
       Alarm.ignore_minute and
       (
-        not Alarm.has_seconds or
-        (Alarm.has_seconds and Alarm.ignore_second)
+        not has_seconds or
+        (has_seconds and Alarm.ignore_second)
       )
 
     if all_ignored then
