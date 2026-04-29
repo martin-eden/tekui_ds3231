@@ -1,4 +1,4 @@
--- Create "other" interface block
+-- Create "core" interface block
 
 --[[
   Author: Martin Eden
@@ -162,8 +162,7 @@ local create_output_pins_block =
       )
   end
 
-
-local create_other_block =
+local create_core_block =
   function(Me)
     return
       create_ver_group(
@@ -184,7 +183,7 @@ local create_other_block =
   end
 
 -- Export:
-return create_other_block
+return create_core_block
 
 --[[
   2020 #

@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-30
+  Last mod.: 2026-05-11
 ]]
 
 -- Imports:
@@ -13,7 +13,7 @@ local create_ver_group = request('CreateContent.wrappers.create_ver_group')
 local create_moment_block = request('CreateContent.create_moment_block')
 local create_alarm_1_block = request('CreateContent.create_alarm_1_block')
 local create_alarm_2_block = request('CreateContent.create_alarm_2_block')
-local create_other_block = request('CreateContent.create_other_block')
+local create_core_block = request('CreateContent.create_core_block')
 local create_actions_block = request('CreateContent.create_actions_block')
 
 local TekUi = require('tek.ui')
@@ -45,7 +45,7 @@ local create_main_window =
                               create_moment_block(Me),
                               create_alarm_1_block(Me),
                               create_alarm_2_block(Me),
-                              create_other_block(Me),
+                              create_core_block(Me),
                             },
                         }
                       )
