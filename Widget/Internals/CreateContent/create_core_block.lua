@@ -103,7 +103,7 @@ local create_speed_trim_input_block =
           Contents =
             {
               input_box('', 'speed_trim', { Width = 50 }),
-              text_label_la('clock limit adjustment [-128, 127]'),
+              text_label_la('clock speed trimming'),
             },
         }
       )
