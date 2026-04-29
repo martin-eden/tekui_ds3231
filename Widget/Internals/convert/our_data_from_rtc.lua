@@ -14,8 +14,8 @@ local from_ampm_hour = request('!.concepts.daytime.from_ampm_hour')
 local get_hour =
   function(hour_data, is_12h_format)
     if is_12h_format then
-      local is_pm = get_bit(hour_data, 6)
-      local hour_ampm = bcd_to_byte(get_bits(hour_data, 0, 5))
+      local is_pm = get_bit(hour_data, 5)
+      local hour_ampm = bcd_to_byte(get_bits(hour_data, 0, 4))
 
       return from_ampm_hour(hour_ampm, is_pm)
     end

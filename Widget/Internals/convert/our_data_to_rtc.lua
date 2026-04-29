@@ -18,8 +18,8 @@ local get_hour_data_from_hour =
 
     if is_ampm then
       local hour_ampm, is_pm = to_ampm_hour(hour)
-      hour_data = bcd_from_byte(set_bits(hour_ampm, 0, 5, hour_data))
-      hour_data = set_bit(hour_data, 6, is_pm)
+      hour_data = bcd_from_byte(set_bits(hour_ampm, 0, 4, hour_data))
+      hour_data = set_bit(hour_data, 5, is_pm)
     else
       hour_data = bcd_from_byte(hour)
     end
