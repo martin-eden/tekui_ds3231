@@ -1,21 +1,29 @@
 -- Create file with given pathname and contents
 
 --[[
-  Design version: 2
-  Last mod.: 2024-02-17
+  Author: Martin Eden
+  Last mod.: 2026-05-04
 ]]
 
-return
-  function(PathName, Contents)
-    assert_string(PathName)
-    assert_string(Contents)
+-- Imports:
+local safe_open = request('safe_open')
 
-    local FileMode = 'wb'
-    local File, ErrorMsg = io.open(PathName, FileMode)
-    if not File then
-      error(ErrorMsg)
-    end
-    File:write(Contents)
+local create_file =
+  function(pathname, contents)
+    assert_string(pathname)
+    assert_string(contents)
 
-    File:close()
+    local file = safe_open(pathname, 'wb')
+
+    file:write(contents)
+
+    file:close()
   end
+
+-- Export:
+return create_file
+
+--[[
+  2024
+  2026-05-04
+]]

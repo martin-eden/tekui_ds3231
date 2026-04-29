@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-23
+  Last mod.: 2026-05-08
 ]]
 
 --[[
@@ -42,7 +42,7 @@ local unite_prefixes =
     while rel_prefix:find('^%^%.') do
       if (base_prefix == '') then
         error(
-          ([[Link "%s" is outside caller's prefix "%s".]]):format(
+          ([[Link "%s" is outside of caller's prefix "%s".]]):format(
             init_rel_prefix,
             init_base_prefix
           )
@@ -123,12 +123,13 @@ local request =
     return table.unpack(results)
   end
 
-local IsFirstRun = (_G.request == nil)
+local is_first_run = (_G.request == nil)
 
-if IsFirstRun then
+if is_first_run then
   _G.request = request
   _G.dependencies = dependencies
   _G.get_require_name = get_require_name
+  _G.get_base_prefix = function() return base_prefix end
 
   --[[
     At this point we installed "request()", so it's usable from
@@ -173,4 +174,5 @@ end
   2018-02
   2018-05
   2024-03
+  2026-05-08
 ]]
