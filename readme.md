@@ -9,6 +9,38 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ![page alarm_2][gui_alarm_2]
 ![page other][gui_other]
 
+
+## Usage
+
+```
+GUI to display and edit data of hardware clock module DS331
+
+Usage:
+
+  lua run.lua <DevicePath>
+                   ┬
+                   ├── "/dev/ttyUSB<N>" -- use device at that port
+                   └── "--virtual" -- use virtual device (data in local file)
+
+```
+
+If you just want to test GUI without any Arduino and DS3231 use
+`--virtual` command-line arg.
+
+1. Pre-flight checks
+    1. Connect board to USB port
+    2. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`)
+    3. Close Arduino IDE serial monitor window
+    4. Connect DS3231 module. Check wiring
+2. Run main file:
+
+   ```
+   $ lua run.lua /dev/ttyUSB0
+   ```
+
+   (Or correct file name to port with your Uno.)
+
+
 ## Requirements
 
   * Linux
@@ -21,31 +53,6 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ## Install/remove
 
 Clone this repository / Delete directory.
-
-## Usage
-
-If you don't have Arduino or DS3231 and just wish to take a look at interface, checkout [virtual_rtc] branch.
-
-1. Pre-flight checks.
-    1. Connect board to USB port.
-    2. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`).
-    3. Close Arduino IDE serial monitor window.
-    4. Connect DS3231 module. Check wiring.
-2. Run main file:
-
-   `$ lua run.lua`
-
-   It will try to open first existing /dev/ttyUSB<n> port (n = 0, 7).
-
-   If you have several Arduinos connected, add port name:
-
-   `$ lua run.lua /dev/ttyUSB2`
-
-
-### Usage details
-
-If you use alarm and it have hour time, alarm will trigger *iff*
-hour is stored in same format as moment time: 12h AM/PM or 24h.
 
 ## See also
 
