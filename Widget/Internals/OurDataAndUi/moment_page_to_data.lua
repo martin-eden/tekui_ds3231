@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-11
 ]]
 
 -- Imports:
@@ -23,7 +23,7 @@ local get_moment_page =
 
         month = to_two_digits_num(get_input_number('moment_month')),
         date = to_two_digits_num(get_input_number('moment_date')),
-        dow = to_two_digits_num(get_input_number('moment_day')),
+        day = to_two_digits_num(get_input_number('moment_day')),
 
         hour = to_two_digits_num(get_input_number('moment_hour')),
         store_hour_in_12h = get_checkbox('moment_store_hour_in_12h'),

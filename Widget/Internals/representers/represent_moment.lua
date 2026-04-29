@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-11
 ]]
 
 local DayNumToName =
@@ -29,7 +29,7 @@ local represent_moment =
         year,
         Moment.month,
         Moment.date,
-        DayNumToName[Moment.dow],
+        DayNumToName[Moment.day],
         Moment.hour,
         Moment.minute,
         Moment.second
