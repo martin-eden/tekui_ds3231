@@ -49,7 +49,6 @@ local create_freq_selector_block =
       create_hor_group(
         {
           Text = 'Wave',
-          Overrides = { Columns = 2 },
           Contents =
             {
               one_of_el('1 Hz', nil, 'wave_freq_num_0'),
@@ -64,7 +63,7 @@ end
 local create_square_wave_block =
   function(Me)
     return
-      create_hor_group(
+      create_ver_group(
         {
           Text = 'output pin',
           Contents =
