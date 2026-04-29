@@ -1,3 +1,5 @@
+[![DeepWiki][DeepWiki_Logo]][DeepWiki_Repo] (sometimes AI explains it better)
+
 ## RTC DS3231 GUI
 
 (2019, 2020, 2024, 2026)
@@ -7,7 +9,7 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ![page moment][gui_moment]
 ![page alarm_1][gui_alarm_1]
 ![page alarm_2][gui_alarm_2]
-![page other][gui_other]
+![page core][gui_core]
 
 
 ## Usage
@@ -50,9 +52,9 @@ $ lua run.lua --virtual
   * Linux
   * [Lua 5.3][lua53-setup]
   * [Tek-UI][tekui-setup]
-  * Arduino-compatible board
-    * with DS3231 module connected
-  * `StandardFirmata` burned in board (delivered with Arduino IDE)
+  * DS3231 module
+  * Microcontroller (ATmega, ESP, STM ..) with `StandardFirmata`
+    firmware. (This firmware is present in Arduino IDE.)
 
 ## Install/remove
 
@@ -64,13 +66,16 @@ Clone this repository / Delete directory.
 * [Details and explanations][details]
 * [My other repositories][repos]
 
+[DeepWiki_Logo]: https://deepwiki.com/badge.svg
+[DeepWiki_Repo]: https://deepwiki.com/martin-eden/tekui_ds3231
+
 [tek-ui]: http://tekui.neoscientists.org/
 [tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
 [lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
 [gui_moment]: doc_parts/gui_moment.png
 [gui_alarm_1]: doc_parts/gui_alarm_1.png
 [gui_alarm_2]: doc_parts/gui_alarm_2.png
-[gui_other]: doc_parts/gui_other.png
+[gui_core]: doc_parts/gui_core.png
 [virtual_rtc]: https://github.com/martin-eden/tekui_ds3231/tree/virtual_rtc
 [datasheet]: https://github.com/martin-eden/doc.ds3231/raw/master/DS3231.pdf
 [details]: doc_parts/details.md
