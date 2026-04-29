@@ -4,7 +4,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-29
+  Last mod.: 2026-05-11
 ]]
 
 --[[ Develop
@@ -22,9 +22,9 @@ local Config =
 local Widget = request('Widget.Interface')
 local normalize_file_name = request('!.file_system.file.normalize_name')
 local create_window = request('!.frontend.tekui.create_window')
-local special_checkbox_coloring = request('Widget.special_checkbox_coloring')
-local RawDataProvider = request('Widget.RawDataProvider.Interface')
-local RtcDataProvider = request('Widget.RtcDataProvider.Interface')
+local special_checkbox_coloring = request('Widget.Internals.special_checkbox_coloring')
+local RawDataProvider = request('RawDataProvider.Interface')
+-- _G.t2s = request('!.convert.table_to_str')
 
 local requires_tekui_msg = [[
 This tool requires TekUI GUI framework
@@ -95,9 +95,7 @@ if not init_done then
   return
 end
 
-RtcDataProvider.RawDataProvider = RawDataProvider
-
-Widget.RtcDataProvider = RtcDataProvider
+Widget.RawDataProvider = RawDataProvider
 
 local create_main_window =
   function(Content)
@@ -146,4 +144,5 @@ Application:run()
   2026-04-27
   2026-04-28
   2026-04-29
+  2026-05-10
 ]]

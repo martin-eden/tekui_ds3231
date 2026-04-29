@@ -1,0 +1,63 @@
+Core
+  is_busy                   is_busy
+  time_is_spoiled           time_is_spoiled
+
+  atbattery_clock_disabled  atbattery_clock_disabled
+  atbattery_enable_wave     atbattery_enable_wave
+
+  output_is_from_alarms     output_is_from_alarms
+  enable_wave_32k           enable_wave_32k
+
+  temperature               temperature
+  get_temperature           get_temperature
+
+  speed_trim                speed_trim
+
+  wave_freq_num             ( wave_freq_num_0 ... wave_freq_num_3 )
+
+Moment
+  year              moment_year
+  is_next_century   moment_is_next_century
+
+  month             moment_month
+  date              moment_date
+  day               moment_day
+
+  hour              moment_hour
+  store_hour_in_12h moment_store_hour_in_12h
+
+  minute            moment_minute
+  second            moment_second
+
+Alarm_1
+  enabled           alarm_1_enabled,
+  occurred          alarm_1_occurred,
+
+  dateday           alarm_1_dateday
+  is_day            alarm_1_is_day
+  ignore_dateday    ( alarm_1_dateday_any alarm_1_dateday_spec )
+
+  hour              alarm_1_hour
+  store_hour_in_12h alarm_1_store_hour_in_12h
+  ignore_hour       ( alarm_1_hour_any alarm_1_hour_spec )
+
+  minute            alarm_1_minute
+  ignore_minute     ( alarm_1_minute_any alarm_1_minute_spec )
+
+  second            alarm_1_second
+  ignore_second     ( alarm_1_second_any alarm_1_second_spec )
+
+Alarm_2
+  enabled           alarm_2_enabled,
+  occurred          alarm_2_occurred,
+
+  dateday           alarm_2_dateday
+  is_day            alarm_2_is_day
+  ignore_dateday    ( alarm_2_dateday_any alarm_2_dateday_spec )
+
+  hour              alarm_2_hour
+  store_hour_in_12h alarm_2_store_hour_in_12h
+  ignore_hour       ( alarm_2_hour_any alarm_2_hour_spec )
+
+  minute            alarm_2_minute
+  ignore_minute     ( alarm_2_minute_any alarm_2_minute_spec )

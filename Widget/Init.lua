@@ -2,20 +2,18 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-05-10
 ]]
 
 local Init =
   function(Me, TekUi_App)
-    Me:InstallPresentationUpdaters(TekUi_App)
+    Me.TekUi_App = TekUi_App
 
-    local RtcRec = Me.RtcDataProvider:Load()
+    Me:InstallPresentationUpdaters()
 
-    if not RtcRec then
-      return false
-    end
+    if not Me:DataFromRaw() then return false end
 
-    Me:SetFields(TekUi_App, RtcRec)
+    Me:DataToUi()
 
     return true
   end
