@@ -6,8 +6,8 @@
 ]]
 
 -- Imports:
-local hor_group = request('!.frontend.tekui.hor_group')
-local ver_group = request('!.frontend.tekui.ver_group')
+local create_hor_group = request('wrappers.create_hor_group')
+local create_ver_group = request('wrappers.create_ver_group')
 local text_label = request('!.frontend.tekui.text_label')
 local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
@@ -52,59 +52,126 @@ local create_spec_rb =
       )
   end
 
-local create_alarm_1_block =
-  function(self)
+local create_alarm_presentation_block =
+  function(Me)
     return
-      ver_group(
-        nil,
-        { Width = self.ui_width },
-        hor_group(
-          '',
-          {},
-          text_label(
-            '',
+      create_hor_group(
+        {
+          Text = '',
+          Contents =
             {
-              Style = self.ui_status_style,
-              Id = 'alarm_1_presentation',
-            }
-          )
-        ),
-        checkbox('enable output', false, 'alarm_1_enabled'),
-        checkbox('occurred', false, 'alarm_1_occurred'),
-        hor_group(
-          nil,
-          {},
-          ver_group(
-            'day',
-            { Width = 'free' },
-            create_any_rb('alarm_1_day_any'),
-            create_spec_rb('alarm_1_day_spec'),
-            input_box('', 'alarm_1_date_dow')
-          ),
-          ver_group(
-            'hour',
-            { Width = 'free' },
-            create_any_rb('alarm_1_hour_any'),
-            create_spec_rb('alarm_1_hour_spec'),
-            input_box('', 'alarm_1_hour')
-          ),
-          ver_group(
-            'minute',
-            { Width = 'free' },
-            create_any_rb('alarm_1_minute_any'),
-            create_spec_rb('alarm_1_minute_spec'),
-            input_box('', 'alarm_1_minute')
-          ),
-          ver_group(
-            'second',
-            { Width = 'free' },
-            create_any_rb('alarm_1_second_any'),
-            create_spec_rb('alarm_1_second_spec'),
-            input_box('', 'alarm_1_second')
-          )
-        ),
-        checkbox('day of month, not week', false, 'alarm_1_is_date_not_dow'),
-        checkbox('AM/PM hour format', false, 'alarm_1_store_hour_in_12h')
+              text_label(
+                '',
+                {
+                  Style = Me.ui_status_style,
+                  Id = 'alarm_1_presentation',
+                }
+              )
+            },
+        }
+      )
+  end
+
+local create_day_select_block =
+  function(Me)
+    return
+      create_ver_group(
+        {
+          Text = 'day',
+          Overrides = { Width = 'free' },
+          Contents =
+            {
+              create_any_rb('alarm_1_day_any'),
+              create_spec_rb('alarm_1_day_spec'),
+              input_box('', 'alarm_1_date_dow'),
+            },
+        }
+      )
+  end
+
+local create_hour_select_block =
+  function(Me)
+    return
+      create_ver_group(
+        {
+          Text = 'hour',
+          Overrides = { Width = 'free' },
+          Contents =
+            {
+              create_any_rb('alarm_1_hour_any'),
+              create_spec_rb('alarm_1_hour_spec'),
+              input_box('', 'alarm_1_hour'),
+            },
+        }
+      )
+  end
+
+local create_minute_select_block =
+  function(Me)
+    return
+      create_ver_group(
+        {
+          Text = 'minute',
+          Overrides = { Width = 'free' },
+          Contents =
+            {
+              create_any_rb('alarm_1_minute_any'),
+              create_spec_rb('alarm_1_minute_spec'),
+              input_box('', 'alarm_1_minute'),
+            },
+        }
+      )
+  end
+
+local create_second_select_block =
+  function(Me)
+    return
+      create_ver_group(
+        {
+          Text = 'second',
+          Overrides = { Width = 'free' },
+          Contents =
+            {
+              create_any_rb('alarm_1_second_any'),
+              create_spec_rb('alarm_1_second_spec'),
+              input_box('', 'alarm_1_second'),
+            },
+        }
+      )
+  end
+
+local create_alarm_inputs_block =
+  function(Me)
+    return
+      create_hor_group(
+        {
+          Contents =
+            {
+              create_day_select_block(Me),
+              create_hour_select_block(Me),
+              create_minute_select_block(Me),
+              create_second_select_block(Me),
+            },
+        }
+      )
+  end
+
+local create_alarm_1_block =
+  function(Me)
+    return
+      create_ver_group(
+        {
+          Overrides = { Width = Me.ui_width },
+          Contents =
+            {
+              create_alarm_presentation_block(Me),
+              checkbox('enable output', false, 'alarm_1_enabled'),
+              checkbox('occurred', false, 'alarm_1_occurred'),
+              create_alarm_inputs_block(Me),
+              checkbox('day of month, not week', false, 'alarm_1_is_date_not_dow'),
+              checkbox('AM/PM hour format', false, 'alarm_1_store_hour_in_12h'),
+            },
+        }
       )
   end
 

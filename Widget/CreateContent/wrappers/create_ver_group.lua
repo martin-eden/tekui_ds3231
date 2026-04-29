@@ -1,15 +1,15 @@
--- Create horizontal group for TekUi
+-- Create vertical group for TekUi
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-27
+  Last mod.: 2026-04-29
 ]]
 
 -- Imports:
-local ws_create_hor_group = request('!.frontend.tekui.hor_group')
+local ws_create_ver_group = request('!.frontend.tekui.ver_group')
 
 --[[
-  Create horizontal group
+  Create vertical group
 
   Input format:
 
@@ -28,7 +28,7 @@ local create_hor_group =
     assert_table(Children)
 
     return
-      ws_create_hor_group(
+      ws_create_ver_group(
         caption,
         Overrides,
         table.unpack(Children)
@@ -39,5 +39,5 @@ local create_hor_group =
 return create_hor_group
 
 --[[
-  2026-04-27
+  2026-04-29
 ]]

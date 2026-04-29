@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-27
+  Last mod.: 2026-04-29
 ]]
 
 -- Imports:
@@ -13,13 +13,13 @@ local create_hor_group = request('wrappers.create_hor_group')
 
 local Load_Btn =
   {
-    Name = '_Load',
+    Text = '_Load',
     Handler = func_load,
   }
 
 local Save_Btn =
   {
-    Name = '_Save',
+    Text = '_Save',
     Handler = func_save,
   }
 
@@ -29,10 +29,11 @@ local create_actions_block =
     return
       create_hor_group(
         {
-          {
-            create_button(Me, Load_Btn),
-            create_button(Me, Save_Btn),
-          },
+          Contents =
+            {
+              create_button(Me, Load_Btn),
+              create_button(Me, Save_Btn),
+            },
         }
       )
   end

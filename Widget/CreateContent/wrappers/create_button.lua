@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-27
+  Last mod.: 2026-04-29
 ]]
 
 -- Imports:
@@ -10,18 +10,18 @@ local ws_create_button = request('!.frontend.tekui.button')
 local create_button_handler = request('create_button.create_button_handler')
 
 --[[
-  Create button for TekUi from our custom format:
+  Create button for TekUi from our custom input format:
 
     Me [t]
-    (
-      Name [s]
+    {
+      Text [s]
       Handler [f]
-    )
+    }
 ]]
 
 local create_button =
   function(Me, Button)
-    local caption = Button.Name
+    local caption = Button.Text
     local handler = Button.Handler
 
     assert_string(caption)
@@ -41,4 +41,5 @@ return create_button
 
 --[[
   2026-04-27
+  2026-04-29
 ]]
