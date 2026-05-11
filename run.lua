@@ -4,10 +4,10 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-12
 ]]
 
---[[ Develop
+-- [[ Develop
 package.path = package.path .. ';../../?.lua'
 --]]
 require('workshop.base')
@@ -20,7 +20,7 @@ local Config =
 
 -- Imports:
 local Widget = request('Widget.Interface')
---[[ Debug
+-- [[ Debug
 _G.t2s = request('!.convert.table_to_str')
 -- _G.t2s = request('!.concepts.lua_table_code.save')
 --]]
