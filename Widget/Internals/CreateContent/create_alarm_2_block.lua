@@ -8,7 +8,6 @@
 -- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local text_label = request('!.frontend.tekui.text_label')
 local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
 local radio_mark = request('!.frontend.tekui.radio_button')
@@ -47,26 +46,6 @@ local create_spec_rb =
     return
       radio_mark(
         'specific', elem_id, { onSelect = correct_flags_spec  }
-      )
-  end
-
-local create_alarm_presentation_block =
-  function(Me)
-    return
-      create_hor_group(
-        {
-          Text = '',
-          Contents =
-            {
-              text_label(
-                '',
-                {
-                  Style = Me.ui_status_style,
-                  Id = 'alarm_2_presentation',
-                }
-              ),
-            },
-        }
       )
   end
 
@@ -144,7 +123,6 @@ local create_alarm_2_block =
           Overrides = { Width = Me.ui_width },
           Contents =
             {
-              create_alarm_presentation_block(Me),
               checkbox('occurred', false, 'alarm_2_occurred'),
               checkbox('enable output', false, 'alarm_2_enabled'),
               create_alarm_inputs_block(Me),

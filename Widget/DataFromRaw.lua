@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -13,7 +13,8 @@ local DataFromRaw =
   function(Me)
     local RawData = Me.RawDataProvider:Load()
 
-    if not RawData then return false end
+    if (#RawData == 0) then print('Load() broke') end
+    if (#RawData == 0) then return false end
 
     local RtcRec = Me.Ds3231_Codec:Parse(bytes_to_str(RawData))
 

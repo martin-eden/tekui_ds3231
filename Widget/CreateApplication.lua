@@ -14,13 +14,15 @@
     )
 ]]
 
--- Imports:
-local normalize_file_name = request('!.file_system.file.normalize_name')
 local TekUi = require('tek.ui')
+local TekUi_Debug = require 'tek.lib.debug'
+
+local normalize_file_name = request('!.file_system.file.normalize_name')
 local create_window = request('!.frontend.tekui.create_window')
 
--- Internal parts:
 local special_checkbox_coloring = request('Internals.special_checkbox_coloring')
+
+TekUi_Debug.level = TekUi_Debug.ERROR
 
 local CreateApplication =
   function(Me, Config)

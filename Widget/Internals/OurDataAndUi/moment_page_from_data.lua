@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -10,9 +10,12 @@ local prefix_args = request('!.function.prefix_args')
 local ws_set_input_text = request('!.frontend.tekui.set_input_text')
 local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
 local to_two_digits_str = request('Internals.to_two_digits_str')
+local element_exists = request('Internals.element_exists')
 
 local set_moment_page =
   function(TekUi_App, Moment)
+    if not element_exists(TekUi_App, 'moment_year') then return end
+
     local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
     local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
 
@@ -56,4 +59,5 @@ return set_moment_page
   2026-04-28
   2026-05-09
   2026-05-10
+  2026-05-12
 ]]

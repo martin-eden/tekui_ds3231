@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -11,9 +11,12 @@ local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
 local ws_set_input_text = request('!.frontend.tekui.set_input_text')
 local ws_set_radiomark_binary = request('!.frontend.tekui.set_radiomark_binary')
 local to_two_digits_str = request('Internals.to_two_digits_str')
+local element_exists = request('Internals.element_exists')
 
 local set_alarm_2_page =
   function(TekUi_App, Alarm)
+    if not element_exists(TekUi_App, 'alarm_2_enabled') then return end
+
     local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
     local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
     local set_radiomark_binary = prefix_args(ws_set_radiomark_binary, TekUi_App)
@@ -67,4 +70,5 @@ return set_alarm_2_page
   2026-04-28
   2026-05-09
   2026-05-10
+  2026-05-12
 ]]

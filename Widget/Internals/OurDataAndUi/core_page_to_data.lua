@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -10,6 +10,7 @@ local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
 local ws_get_input_number = request('!.frontend.tekui.get_input_number')
 local prefix_args = request('!.function.prefix_args')
 local constrain_number = request('!.number.constrain')
+local element_exists = request('Internals.element_exists')
 
 local constrain_temperature =
   function(temperature)
@@ -23,6 +24,10 @@ local constrain_speed_trim =
 
 local get_other_settings_rec =
   function(TekUi_App)
+    if not element_exists(TekUi_App, 'is_busy') then
+      return { }
+    end
+
     local get_checkbox = prefix_args(ws_get_checkbox, TekUi_App)
     local get_input_number = prefix_args(ws_get_input_number, TekUi_App)
 
@@ -33,7 +38,8 @@ local get_other_settings_rec =
             return idx
           end
         end
-        error('No frequency is selected')
+        -- Fallback
+        return 0
       end
 
     return
@@ -62,4 +68,5 @@ return get_other_settings_rec
 --[[
   2020
   2026-05-10
+  2026-05-12
 ]]

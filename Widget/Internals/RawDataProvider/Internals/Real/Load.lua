@@ -1,8 +1,8 @@
--- Load raw data from stream
+-- Load raw I2C data
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-05-13
 ]]
 
 local read_chunk_size = 200
@@ -16,6 +16,17 @@ local Load =
     Compiler.request.i2c_read(Compiler, device_id, 0, data_size)
 
     local data_str = Me.Teletype.Input:Read(read_chunk_size)
+
+    --[[
+      At heavy load it fails
+
+      At substantial I2C read load with occasional I2C writes
+      we'll start getting nothing from teletype. Re-reads won't help.
+
+      We don't know what what part is exactly failed, maybe Firmata
+      firmware itself. Bottom line is that we can't fulfill contract.
+    ]]
+    if (data_str == '') then return { } end
 
     Me.InputBuffer:add(data_str)
 
@@ -38,4 +49,5 @@ return Load
 
 --[[
   2026-04-28
+  2026-05-13
 ]]

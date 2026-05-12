@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-13
 ]]
 
 -- Imports:
@@ -12,9 +12,11 @@ local represent_core = request('representers.represent_core')
 
 local UpdatePresentations =
   function(Me)
-    local TekUi_App = Me.TekUi_App
+    if not Me:DataFromRaw() then return end
 
-    local OurData = Me:DataFromUi()
+    local OurData = Me.Data
+
+    local TekUi_App = Me.TekUi_App
 
     local run_representer =
       function(elem_id, presenter, DataRec)

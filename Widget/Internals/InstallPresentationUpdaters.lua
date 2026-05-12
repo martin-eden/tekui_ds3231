@@ -17,7 +17,7 @@ local InstallPresentationUpdaters =
     ]]
     local update_representations =
       function()
-        local num_calls_before_update = 20
+        local num_calls_before_update = 70
         local num_calls_done = num_calls_before_update
 
         while true do

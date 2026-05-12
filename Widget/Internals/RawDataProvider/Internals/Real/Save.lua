@@ -1,8 +1,8 @@
--- Save raw data
+-- Save raw I2C data
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-05-13
 ]]
 
 local Save =

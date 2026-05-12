@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -10,9 +10,12 @@ local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
 local ws_set_radiomark = request('!.frontend.tekui.set_radiomark')
 local ws_set_input_text = request('!.frontend.tekui.set_input_text')
 local prefix_args = request('!.function.prefix_args')
+local element_exists = request('Internals.element_exists')
 
 local set_other_settings_page =
   function(TekUi_App, CoreRec)
+    if not element_exists(TekUi_App, 'is_busy') then return end
+
     local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
     local set_radiomark = prefix_args(ws_set_radiomark, TekUi_App)
     local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
@@ -61,4 +64,5 @@ return set_other_settings_page
   2020 #
   2026-04-28
   2026-05-10
+  2026-05-12
 ]]

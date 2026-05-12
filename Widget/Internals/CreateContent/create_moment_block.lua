@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -26,26 +26,6 @@ local SetEndOfDay_Btn =
     Text = 'Set _end of day',
     Handler = func_set_end_of_day,
   }
-
-local create_moment_presentation_block =
-  function(Me)
-    return
-      create_hor_group(
-        {
-          Text = '',
-          Contents =
-            {
-              text_label(
-                '',
-                {
-                  Style = Me.ui_status_style,
-                  Id = 'moment_presentation',
-                }
-              )
-            },
-        }
-      )
-  end
 
 local create_moment_inputs_block =
   function(Me)
@@ -89,7 +69,6 @@ local create_moment_block =
           Overrides = { Width = Me.ui_width },
           Contents =
             {
-              create_moment_presentation_block(Me),
               create_moment_inputs_block(Me),
               checkbox('AM/PM hour format', false, 'moment_store_hour_in_12h'),
               checkbox('Is next century', false, 'moment_is_next_century'),
