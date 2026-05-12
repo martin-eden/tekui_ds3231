@@ -1,0 +1,92 @@
+-- Create TekUI application for our widget
+
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-12
+]]
+
+--[[
+  Input data
+
+    (
+      IsVirtualDevice [b] -- do not connect to device
+      DeviceFileName [s] -- device file name
+    )
+]]
+
+-- Imports:
+local normalize_file_name = request('!.file_system.file.normalize_name')
+local TekUi = require('tek.ui')
+local create_window = request('!.frontend.tekui.create_window')
+
+-- Internal parts:
+local special_checkbox_coloring = request('Internals.special_checkbox_coloring')
+
+local CreateApplication =
+  function(Me, Config)
+    local is_virtual_device = Config.IsVirtualDevice
+    local device_file_name = Config.DeviceFileName
+
+    local RawDataProvider = Me.RawDataProvider
+
+    device_file_name = normalize_file_name(device_file_name)
+
+    local init_done =
+      RawDataProvider:Init(
+        {
+          UseVirtualDevice = is_virtual_device,
+          DeviceFileName = device_file_name,
+        }
+      )
+
+    if not init_done then
+      print('Failed to initialize device')
+
+      return
+    end
+
+    local Content = Me:CreateContent()
+
+    local title
+    if is_virtual_device then
+      title = 'Virtual DS3231'
+    else
+      title = string.format('DS3231 on %s', device_file_name)
+    end
+
+    local MainWindow = create_window(title, { }, Content)
+
+    TekUi.Application.connect(MainWindow)
+
+    local Application =
+      TekUi.Application:new(
+        { AuthorStyles = special_checkbox_coloring }
+      )
+
+    Application:addMember(MainWindow)
+
+    Me.TekUi_App = Application
+
+    if not Me:Init() then
+      print('Failed to load data')
+
+      if not is_virtual_device then
+        print('')
+        print('  * Check wiring')
+        print('  * Check that "StandardFirmata" sketch is loaded into board')
+      end
+
+      return
+    end
+
+    MainWindow:setValue('Status', 'show')
+
+    return Application
+  end
+
+-- Export:
+return CreateApplication
+
+--[[
+  2026-05-12
+]]

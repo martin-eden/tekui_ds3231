@@ -20,10 +20,6 @@ local Config =
 
 -- Imports:
 local Widget = request('Widget.Interface')
-local normalize_file_name = request('!.file_system.file.normalize_name')
-local create_window = request('!.frontend.tekui.create_window')
-local special_checkbox_coloring = request('Widget.Internals.special_checkbox_coloring')
-local RawDataProvider = request('RawDataProvider.Interface')
 --[[ Debug
 _G.t2s = request('!.convert.table_to_str')
 -- _G.t2s = request('!.concepts.lua_table_code.save')
@@ -73,72 +69,19 @@ if not arg[1] then
   return
 end
 
---[[
-  TekUI import
-
-  It's placed here to be after code check for it's presence and
-  graceful failure.
-]]
-local TekUi = require('tek.ui')
-
-local is_virtual_device = Config.IsVirtualDevice
-local device_file_name = normalize_file_name(Config.DeviceFileName)
-
-local init_done =
-  RawDataProvider:Init(
+local Application =
+  Widget:CreateApplication(
     {
-      UseVirtualDevice = is_virtual_device,
-      DeviceFileName = device_file_name,
+      DeviceFileName = Config.DeviceFileName,
+      IsVirtualDevice = Config.IsVirtualDevice,
     }
   )
 
-if not init_done then
-  print('Failed to initialize device')
+if not Application then
+  print('Failed to initialize application')
 
   return
 end
-
-local create_main_window =
-  function(Content)
-    local title
-    if is_virtual_device then
-      title = 'Virtual DS3231'
-    else
-      title = string.format('DS3231 on %s', device_file_name)
-    end
-
-    return create_window(title, { }, Content)
-  end
-
-local MainWindow = create_main_window(Widget:CreateContent())
-
-TekUi.Application.connect(MainWindow)
-
-local Application =
-  TekUi.Application:new(
-    { AuthorStyles = special_checkbox_coloring }
-  )
-
-Application:addMember(MainWindow)
-
-Widget.RawDataProvider = RawDataProvider
-Widget.TekUi_App = Application
-
-if not Widget:Init() then
-  print('Failed to load data')
-  if not is_virtual_device then
-    print([[
-
-  * Check wiring
-  * Check that "StandardFirmata" sketch is loaded into board
-]]
-    )
-  end
-
-  return
-end
-
-MainWindow:setValue('Status', 'show')
 
 Application:run()
 
@@ -149,4 +92,5 @@ Application:run()
   2026-04-28
   2026-04-29
   2026-05-10
+  2026-05-12
 ]]

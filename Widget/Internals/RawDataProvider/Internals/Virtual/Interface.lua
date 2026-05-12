@@ -5,6 +5,9 @@
   Last mod.: 2026-05-09
 ]]
 
+local file_name =
+  'Widget/Internals/RawDataProvider/Internals/Virtual/' .. 'raw_state.data.is'
+
 -- Export:
 return
   {
@@ -14,7 +17,7 @@ return
     Save = request('Save'),
 
     -- Internals:
-    RawDataFileName = 'RawDataProvider/Internals/Virtual/raw_state.data.is',
+    RawDataFileName = file_name,
   }
 
 --[[

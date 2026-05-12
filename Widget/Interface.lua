@@ -8,8 +8,12 @@
 --[[
   Interface
 
+    CreateApplication [f] -- create TekUI application
+
     RawDataProvider [t] -- raw data provider
+    Ds3231_Codec [t] -- codec for raw data
     TekUi_App [t] -- TekUI Application instance
+
     Data [t] -- data in out custom format
 
     Init [f]
@@ -22,27 +26,28 @@
 -- Imports:
 local Ds3231_Codec = request('!.concepts.codec_ds3231.Interface')
 
+local RawDataProvider = request('Internals.RawDataProvider.Interface')
+
 -- Export:
 return
   {
-    -- Config:
-    RawDataProvider = { },
-    TekUi_App = { },
-
     -- Main:
+    CreateApplication = request('CreateApplication'),
+
+    -- Internals:
+    RawDataProvider = RawDataProvider,
+    Ds3231_Codec = Ds3231_Codec,
+    TekUi_App = { },
+    Data = { },
+
+    ui_width = 460,
+    ui_status_style = 'font: /b; color: #0049B7',
+
     Init = request('Init'),
     DataFromRaw = request('DataFromRaw'),
     DataToUi = request('DataToUi'),
     DataFromUi = request('DataFromUi'),
     DataToRaw = request('DataToRaw'),
-
-    -- Internals:
-    Data = { },
-    Ds3231_Codec = Ds3231_Codec,
-
-    ui_width = 460,
-    ui_status_style = 'font: /b; color: #0049B7',
-
     CreateContent = request('Internals.CreateContent'),
     UpdatePresentations = request('Internals.UpdatePresentations'),
     InstallPresentationUpdaters = request('Internals.InstallPresentationUpdaters'),
@@ -54,4 +59,5 @@ return
   2026-04-27
   2026-04-28
   2026-05-09
+  2026-05-12
 ]]
