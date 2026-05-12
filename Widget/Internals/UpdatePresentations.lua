@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -25,26 +25,10 @@ local UpdatePresentations =
         TekUi_App:getById(elem_id):setValue('Text', result)
       end
 
-    run_representer(
-      'moment_presentation',
-      represent_moment,
-      OurData.Moment
-    )
-    run_representer(
-      'alarm_1_presentation',
-      represent_alarm,
-      OurData.Alarm_1
-    )
-    run_representer(
-      'alarm_2_presentation',
-      represent_alarm,
-      OurData.Alarm_2
-    )
-    run_representer(
-      'other_presentation',
-      represent_core,
-      OurData.Core
-    )
+    run_representer('moment_presentation', represent_moment, OurData.Moment)
+    run_representer('alarm_1_presentation', represent_alarm, OurData.Alarm_1)
+    run_representer('alarm_2_presentation', represent_alarm, OurData.Alarm_2)
+    run_representer('core_presentation', represent_core, OurData.Core)
   end
 
 -- Export:

@@ -24,7 +24,10 @@ local normalize_file_name = request('!.file_system.file.normalize_name')
 local create_window = request('!.frontend.tekui.create_window')
 local special_checkbox_coloring = request('Widget.Internals.special_checkbox_coloring')
 local RawDataProvider = request('RawDataProvider.Interface')
--- _G.t2s = request('!.convert.table_to_str')
+--[[ Debug
+_G.t2s = request('!.convert.table_to_str')
+-- _G.t2s = request('!.concepts.lua_table_code.save')
+--]]
 
 local requires_tekui_msg = [[
 This tool requires TekUI GUI framework
@@ -95,8 +98,6 @@ if not init_done then
   return
 end
 
-Widget.RawDataProvider = RawDataProvider
-
 local create_main_window =
   function(Content)
     local title
@@ -106,7 +107,7 @@ local create_main_window =
       title = string.format('DS3231 on %s', device_file_name)
     end
 
-    return create_window(title, {}, Content)
+    return create_window(title, { }, Content)
   end
 
 local MainWindow = create_main_window(Widget:CreateContent())
@@ -120,13 +121,16 @@ local Application =
 
 Application:addMember(MainWindow)
 
-if not Widget:Init(Application) then
+Widget.RawDataProvider = RawDataProvider
+Widget.TekUi_App = Application
+
+if not Widget:Init() then
   print('Failed to load data')
   if not is_virtual_device then
     print([[
 
   * Check wiring
-  * Check that "StandardFirmata" sketch is burned into Arduino
+  * Check that "StandardFirmata" sketch is loaded into board
 ]]
     )
   end

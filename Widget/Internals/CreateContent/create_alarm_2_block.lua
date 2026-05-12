@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
@@ -38,7 +38,7 @@ local create_any_rb =
   function(elem_id)
     return
       radio_mark(
-        'any', nil, elem_id, { onSelect = correct_flags_any }
+        'any', elem_id, { onSelect = correct_flags_any }
       )
   end
 
@@ -46,7 +46,7 @@ local create_spec_rb =
   function(elem_id)
     return
       radio_mark(
-        'specific', nil, elem_id, { onSelect = correct_flags_spec  }
+        'specific', elem_id, { onSelect = correct_flags_spec  }
       )
   end
 

@@ -9,10 +9,11 @@ local read_chunk_size = 200
 
 local Load =
   function(Me)
+    local Compiler = Me.Compiler
     local device_id = Me.DeviceId
     local data_size = 19
 
-    Me.Compiler.request.i2c_read(Me.Compiler, device_id, 0, data_size)
+    Compiler.request.i2c_read(Compiler, device_id, 0, data_size)
 
     local data_str = Me.Teletype.Input:Read(read_chunk_size)
 
@@ -29,7 +30,7 @@ local Load =
       end
     end
 
-    return {}
+    return { }
   end
 
 -- Export:

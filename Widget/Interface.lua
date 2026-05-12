@@ -2,14 +2,16 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 --[[
   Interface
 
     RawDataProvider [t] -- raw data provider
+    TekUi_App [t] -- TekUI Application instance
     Data [t] -- data in out custom format
+
     Init [f]
     DataFromRaw [f] -- load data from data provider
     DataToUi [f] -- set UI values from data
@@ -18,15 +20,15 @@
 ]]
 
 -- Imports:
-local Ds3231_Codec = request('!.concepts.codec_ds3231.Interface').create()
-
-local width_px = 460
-local blue_color = '#0049B7'
-local status_style = 'font: /b; color: ' .. blue_color
+local Ds3231_Codec = request('!.concepts.codec_ds3231.Interface')
 
 -- Export:
 return
   {
+    -- Config:
+    RawDataProvider = { },
+    TekUi_App = { },
+
     -- Main:
     Init = request('Init'),
     DataFromRaw = request('DataFromRaw'),
@@ -35,13 +37,11 @@ return
     DataToRaw = request('DataToRaw'),
 
     -- Internals:
-    RawDataProvider = { },
     Data = { },
-    TekUi_App = { },
     Ds3231_Codec = Ds3231_Codec,
 
-    ui_width = width_px,
-    ui_status_style = status_style,
+    ui_width = 460,
+    ui_status_style = 'font: /b; color: #0049B7',
 
     CreateContent = request('Internals.CreateContent'),
     UpdatePresentations = request('Internals.UpdatePresentations'),

@@ -2,14 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
 local func_get_temp = request('^.funcs.get_temp')
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local one_of_el = request('!.frontend.tekui.radio_button')
+local radio_mark = request('!.frontend.tekui.radio_button')
 local text_label = request('!.frontend.tekui.text_label')
 local text_label_ra = request('!.frontend.tekui.text_label_ra')
 local text_label_la = request('!.frontend.tekui.text_label_la')
@@ -35,7 +35,7 @@ local create_presentation_block =
                 '',
                 {
                   Style = Me.ui_status_style,
-                  Id = 'other_presentation',
+                  Id = 'core_presentation',
                 }
               ),
             },
@@ -51,10 +51,10 @@ local create_freq_selector_block =
           Text = 'Wave',
           Contents =
             {
-              one_of_el('1 Hz', nil, 'wave_freq_num_0'),
-              one_of_el('1 KiHz', nil, 'wave_freq_num_1'),
-              one_of_el('4 KiHz', nil, 'wave_freq_num_2'),
-              one_of_el('8 KiHz', nil, 'wave_freq_num_3'),
+              radio_mark('1 Hz', 'wave_freq_num_0'),
+              radio_mark('1 KiHz', 'wave_freq_num_1'),
+              radio_mark('4 KiHz', 'wave_freq_num_2'),
+              radio_mark('8 KiHz', 'wave_freq_num_3'),
             },
         }
       )

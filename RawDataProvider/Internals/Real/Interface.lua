@@ -2,8 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-28
+  Last mod.: 2026-05-12
 ]]
+
+-- Imports:
+local Teletype = request('!.concepts.StreamIo.Teletype.Interface')
+local InputBuffer = request('!.mechs.streams.data_concatter.interface')
+local FirmataParser = request('!.concepts.firmata.parser.interface')
+local FirmataCompiler = request('!.concepts.firmata.compiler.interface')
 
 -- Export:
 return
@@ -16,11 +22,11 @@ return
     -- Internals:
     DeviceId = 104,
 
-    Teletype = request('!.concepts.StreamIo.Teletype.Interface'),
-    InputBuffer = request('!.mechs.streams.data_concatter.interface'),
+    Teletype = Teletype,
+    InputBuffer = InputBuffer,
 
-    Parser = request('!.concepts.firmata.parser.interface'),
-    Compiler = request('!.concepts.firmata.compiler.interface'),
+    Parser = FirmataParser,
+    Compiler = FirmataCompiler,
   }
 
 --[[

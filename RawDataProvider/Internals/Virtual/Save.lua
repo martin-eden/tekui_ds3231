@@ -2,12 +2,12 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-07
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
 local itness_to_str = request('!.convert.itness_to_str')
-local save_str_to_file = request('!.convert.file_from_str')
+local save_to_file = request('!.convert.file_from_str')
 
 local Save =
   function(Me, RawData)
@@ -17,7 +17,7 @@ local Save =
 
     local raw_data_str = itness_to_str(RawData)
 
-    save_str_to_file(raw_data_str, Me.RawDataFileName)
+    save_to_file(raw_data_str, Me.RawDataFileName)
   end
 
 -- Export:

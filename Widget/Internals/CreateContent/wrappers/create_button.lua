@@ -2,12 +2,11 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-29
+  Last mod.: 2026-05-12
 ]]
 
 -- Imports:
 local ws_create_button = request('!.frontend.tekui.button')
-local create_button_handler = request('create_button.create_button_handler')
 
 --[[
   Create button for TekUi from our custom input format:
@@ -27,7 +26,10 @@ local create_button =
     assert_string(caption)
     assert_function(handler)
 
-    local tekui_button_handler = create_button_handler(Me, handler)
+    local tekui_button_handler =
+      function(TekUi_App)
+        handler(Me, TekUi_App)
+      end
 
     return
       ws_create_button(
@@ -42,4 +44,5 @@ return create_button
 --[[
   2026-04-27
   2026-04-29
+  2026-05-12
 ]]

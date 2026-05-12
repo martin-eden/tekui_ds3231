@@ -2,19 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-12
 ]]
 
 local Init =
-  function(Me, TekUi_App)
-    Me.TekUi_App = TekUi_App
-
-    Me:InstallPresentationUpdaters()
-
+  function(Me)
     if not Me:DataFromRaw() then return false end
-
     Me:DataToUi()
-
+    Me:InstallPresentationUpdaters()
     return true
   end
 
@@ -23,4 +18,5 @@ return Init
 
 --[[
   2026-04-28
+  2026-05-12
 ]]
