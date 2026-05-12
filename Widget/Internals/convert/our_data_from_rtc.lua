@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-13
 ]]
 
 -- Imports:
@@ -106,7 +106,7 @@ local our_data_from_rtc =
             occurred = RtcRec.Status.alarm_2_occurred,
 
             dateday = bcd_to_byte(RtcRec.Alarm_2.dateday_bcd),
-            is_day = RtcRec.Alarm_1.dateday_is_day,
+            is_day = RtcRec.Alarm_2.dateday_is_day,
             ignore_dateday = RtcRec.Alarm_2.ignore_dateday,
 
             store_hour_in_12h = RtcRec.Alarm_1.hour_is_12h_format,
