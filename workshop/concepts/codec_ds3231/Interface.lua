@@ -2,19 +2,12 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
-]]
-
---[[
-  Data structure
-
-    Bitfields [t] -- named bit ranges tree
+  Last mod.: 2026-05-12
 ]]
 
 --[[
   Interface
 
-    create [f]
     Parse [f]
     Compile [f]
 ]]
@@ -23,7 +16,6 @@
 local require_file = request('!.system.require_file')
 local itness_from_str = request('!.convert.itness_from_str')
 local ranges_tree_from_itness = request('!.convert.ranges_tree_from_itness')
-local attach_methods = request('!.table.attach_methods')
 
 -- Load bitfields tree
 local get_bitfields =
@@ -37,20 +29,14 @@ local get_bitfields =
     return ranges_tree_from_itness(Bitfields_Is)
   end
 
-local Interface
-Interface =
+local Interface =
   {
+    -- Main:
     Parse = request('Parse'),
     Compile = request('Compile'),
 
-    create =
-      function()
-        local Result = { Bitfields = get_bitfields() }
-
-        attach_methods(Result, Interface)
-
-        return Result
-      end,
+    -- Internals:
+    Bitfields = get_bitfields()
   }
 
 -- Export:
@@ -59,4 +45,5 @@ return Interface
 --[[
   2026-05-07
   2026-05-10
+  2026-05-12
 ]]
