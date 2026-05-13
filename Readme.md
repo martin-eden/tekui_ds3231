@@ -2,7 +2,7 @@
 
 ## RTC DS3231 GUI
 
-(2019, 2020, 2024, 2026)
+(2019-12/2020-01, 2024, 2026)
 
 Editable state of [DS3231 real-time clock][ds3231_images].
 
