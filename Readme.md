@@ -70,7 +70,7 @@ Clone this repository / Delete directory.
 [DeepWiki_Logo]: https://deepwiki.com/badge.svg
 [DeepWiki_Repo]: https://deepwiki.com/martin-eden/tekui_ds3231
 
-[gui_status]: doc_parts/gui_status.png
+[gui_status]: doc_parts/gui_status.gif
 [gui_moment]: doc_parts/gui_moment.png
 [gui_alarm_1]: doc_parts/gui_alarm_1.png
 [gui_alarm_2]: doc_parts/gui_alarm_2.png
