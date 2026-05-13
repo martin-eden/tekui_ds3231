@@ -6,10 +6,11 @@
 
 Editable state of [DS3231 real-time clock][ds3231_images].
 
-![page moment][gui_moment]
-![page alarm_1][gui_alarm_1]
-![page alarm_2][gui_alarm_2]
-![page core][gui_core]
+![status][gui_status]
+![moment][gui_moment]
+![alarm_1][gui_alarm_1]
+![alarm_2][gui_alarm_2]
+![core][gui_core]
 
 
 ## Usage
@@ -69,14 +70,16 @@ Clone this repository / Delete directory.
 [DeepWiki_Logo]: https://deepwiki.com/badge.svg
 [DeepWiki_Repo]: https://deepwiki.com/martin-eden/tekui_ds3231
 
-[tek-ui]: http://tekui.neoscientists.org/
-[tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
-[lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
+[gui_status]: doc_parts/gui_status.png
 [gui_moment]: doc_parts/gui_moment.png
 [gui_alarm_1]: doc_parts/gui_alarm_1.png
 [gui_alarm_2]: doc_parts/gui_alarm_2.png
 [gui_core]: doc_parts/gui_core.png
-[virtual_rtc]: https://github.com/martin-eden/tekui_ds3231/tree/virtual_rtc
+
+[tek-ui]: http://tekui.neoscientists.org/
+[tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
+[lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
+
 [datasheet]: https://github.com/martin-eden/doc.ds3231/raw/master/DS3231.pdf
 [details]: doc_parts/details.md
 [repos]: https://github.com/martin-eden/contents
