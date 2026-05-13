@@ -29,7 +29,7 @@ Usage:
 
 ```
 
-If you just want to test GUI without any Arduino and DS3231 use
+If you just want to test GUI without any hardware use
 ```
 $ lua run.lua --virtual
 ```
