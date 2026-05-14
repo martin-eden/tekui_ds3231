@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-15
 ]]
 
 --[[
@@ -56,7 +56,37 @@ local CreateApplication =
       title = string.format('DS3231 on %s', device_file_name)
     end
 
-    local MainWindow = create_window(title, { }, Content)
+    local Tickers = Me:CreateTickers()
+
+    local WindowOverrides =
+      {
+        show =
+          function(TekUi_Window, drawable)
+            TekUi.Window.show(TekUi_Window, drawable)
+
+            for idx, handler in ipairs(Tickers) do
+              TekUi_Window:addInputHandler(
+                TekUi.MSG_INTERVAL,
+                Me,
+                handler
+              )
+            end
+          end,
+
+        hide =
+          function(TekUi_Window)
+            for idx, handler in ipairs(Tickers) do
+              TekUi_Window:remInputHandler(
+                TekUi.MSG_INTERVAL,
+                Me,
+                handler
+              )
+            end
+            TekUi.Window.hide(TekUi_Window)
+          end,
+      }
+
+    local MainWindow = create_window(title, WindowOverrides, Content)
 
     TekUi.Application.connect(MainWindow)
 
@@ -69,19 +99,10 @@ local CreateApplication =
 
     Me.TekUi_App = Application
 
-    if not Me:Init() then
-      print('Failed to load data')
+    Me:DataFromRaw()
+    Me:DataToUi()
 
-      if not is_virtual_device then
-        print('')
-        print('  * Check wiring')
-        print('  * Check that "StandardFirmata" sketch is loaded into board')
-      end
-
-      return
-    end
-
-    MainWindow:setValue('Status', 'show')
+    MainWindow:show()
 
     return Application
   end

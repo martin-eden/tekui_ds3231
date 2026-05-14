@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-15
 ]]
 
 --[[
@@ -16,7 +16,6 @@
 
     Data [t] -- data in out custom format
 
-    Init [f]
     DataFromRaw [f] -- load data from data provider
     DataToUi [f] -- set UI values from data
     DataFromUi [f] -- set data from UI values
@@ -39,18 +38,18 @@ return
     Ds3231_Codec = Ds3231_Codec,
     TekUi_App = { },
     Data = { },
+    Tickers = { },
 
     ui_width = 460,
     ui_status_style = 'font: /b; color: #0049B7',
 
-    Init = request('Init'),
     DataFromRaw = request('DataFromRaw'),
     DataToUi = request('DataToUi'),
     DataFromUi = request('DataFromUi'),
     DataToRaw = request('DataToRaw'),
     CreateContent = request('Internals.CreateContent'),
     UpdatePresentations = request('Internals.UpdatePresentations'),
-    InstallPresentationUpdaters = request('Internals.InstallPresentationUpdaters'),
+    CreateTickers = request('Internals.CreateTickers'),
   }
 
 --[[
@@ -60,4 +59,5 @@ return
   2026-04-28
   2026-05-09
   2026-05-12
+  2026-05-15
 ]]

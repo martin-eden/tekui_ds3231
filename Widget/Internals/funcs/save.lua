@@ -2,27 +2,19 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-15
 ]]
-
--- Import:
-local patch_table = request('!.table.patch')
 
 --[[
   Save values from input fields to device
 
-  This function saves values only from current selected tab page.
-
-  Data is loaded, patched, saved and loaded back.
+  Data is loaded from device, updated with values from UI,
+  saved to device, loaded back, and UI values are updated.
 ]]
 local func_save =
   function(Me)
-    if not Me:DataFromRaw() then return end
-
-    local UiData = Me:DataFromUi()
-
-    patch_table(Me.Data, UiData)
-
+    Me:DataFromRaw()
+    Me:DataFromUi()
     Me:DataToRaw()
     Me:DataFromRaw()
     Me:DataToUi()
@@ -36,4 +28,5 @@ return func_save
   2026-04-28
   2026-05-09
   2026-05-10
+  2026-05-15
 ]]

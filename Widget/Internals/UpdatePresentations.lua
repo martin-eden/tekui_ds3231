@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-13
+  Last mod.: 2026-05-15
 ]]
 
 -- Imports:
@@ -12,7 +12,7 @@ local represent_core = request('representers.represent_core')
 
 local UpdatePresentations =
   function(Me)
-    if not Me:DataFromRaw() then return end
+    Me:DataFromUi()
 
     local OurData = Me.Data
 

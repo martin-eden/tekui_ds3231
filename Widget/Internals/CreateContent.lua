@@ -80,7 +80,7 @@ local create_core_presentation_block =
       )
   end
 
--- These tables are set up in create_main_window()
+-- These tables are set up in create_content()
 local moment_block
 local alarm_1_block
 local alarm_2_block
@@ -183,9 +183,9 @@ local create_right_pane =
   end
 
 --[[
-  Describe main window for TekUi
+  Main window content for TekUi
 ]]
-local create_main_window =
+local create_content =
   function(Me)
     moment_block = create_moment_block(Me)
     alarm_1_block = create_alarm_1_block(Me)
@@ -214,7 +214,7 @@ local create_main_window =
   end
 
 -- Export:
-return create_main_window
+return create_content
 
 --[[
   2019 #

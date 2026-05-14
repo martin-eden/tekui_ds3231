@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-15
 ]]
 
 -- Imports:
@@ -54,8 +54,6 @@ local get_current_moment =
 -- Set current time
 local func_set_cur_time =
   function(Me)
-    local UiData = Me:DataFromUi()
-
     local CurrentMoment = get_current_moment(UiData)
     merge_and_patch(Me.Data.Moment, CurrentMoment)
     -- Time is correct now, clear "bad time" flag
