@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-17
 ]]
 
 local create_hor_group = request('CreateContent.wrappers.create_hor_group')
@@ -39,7 +39,7 @@ local create_moment_presentation_block =
         {
           Style = Me.ui_status_style,
           Id = 'moment_presentation',
-          Width = 300,
+          Width = 400,
         }
       )
   end
@@ -80,45 +80,81 @@ local create_core_presentation_block =
       )
   end
 
--- These tables are set up in create_content()
-local moment_block
-local alarm_1_block
-local alarm_2_block
-local core_block
+-- Pages content is set up in create_content()
+local UiPages =
+  {
+    Moment = { is_loaded = false, button_id = 'load_moment', Content = { } },
+    Alarm_1 = { is_loaded = false, button_id = 'load_alarm_1', Content = { } },
+    Alarm_2 = { is_loaded = false, button_id = 'load_alarm_2', Content = { } },
+    Core = { is_loaded = false, button_id = 'load_core', Content = { } },
+    last_page_name = '',
+  }
 
-local last_content_type = ''
+local empty_details_content =
+  function(Me)
+    local DetailsPane = Me.TekUi_App:getById('details_pane')
 
-local replace_content =
-  function(Me, content_type)
-    local TekUi_App = Me.TekUi_App
-
-    local RightPane = TekUi_App:getById('right_pane')
-
-    local Children = RightPane:getChildren()
-    for i = 1, #Children do
-      RightPane:remMember(Children[1])
+    local Children = DetailsPane:getChildren()
+    for _ = 1, #Children do
+      DetailsPane:remMember(Children[1])
     end
+  end
 
-    if (content_type ~= last_content_type) then
-      local NewContent
-      if (content_type == 'moment') then
-        NewContent = moment_block
-      elseif (content_type == 'alarm_1') then
-        NewContent = alarm_1_block
-      elseif (content_type == 'alarm_2') then
-        NewContent = alarm_2_block
-      elseif (content_type == 'core') then
-        NewContent = core_block
-      else
-        error('Unknown content type')
-      end
+local set_details_content =
+  function(Me, Content)
+    local DetailsPane = Me.TekUi_App:getById('details_pane')
 
-      RightPane:addMember(NewContent)
+    DetailsPane:addMember(Content)
+  end
 
-      last_content_type = content_type
+local update_page_button_text =
+  function(Me, page_name)
+    local Page = UiPages[page_name]
+
+    if is_nil(Page) then return end
+
+    local button_id = Page.button_id
+    local page_is_visible = Page.is_loaded
+
+    local DetailsButton = Me.TekUi_App:getById(button_id)
+
+    if page_is_visible then
+      DetailsButton:setValue('Text', '<')
+      DetailsButton:setValue('Style', 'font: ui-main/b')
     else
-      last_content_type = ''
+      DetailsButton:setValue('Text', '>')
+      DetailsButton:setValue('Style', 'font: ui-main')
     end
+  end
+
+local set_details_page =
+  function(Me, page_name)
+    empty_details_content(Me)
+
+    -- ( Process last page
+    local last_page_name = UiPages.last_page_name
+
+    if (last_page_name ~= '') and (last_page_name ~= page_name) then
+      local LastPage = UiPages[last_page_name]
+      LastPage.is_loaded = false
+      update_page_button_text(Me, last_page_name)
+    end
+
+    UiPages.last_page_name = page_name
+    -- )
+
+    -- ( Process current page
+    local Page = UiPages[page_name]
+
+    if not Page.is_loaded then
+      set_details_content(Me, Page.Content)
+      Page.is_loaded = true
+    else
+      Page.is_loaded = false
+    end
+
+    update_page_button_text(Me, page_name)
+    -- )
 
     Me:DataToUi()
   end
@@ -126,25 +162,29 @@ local replace_content =
 local Load_Moment_Btn =
   {
     Text = '>',
-    Handler = function(Me) replace_content(Me, 'moment') end,
+    Handler = function(Me) set_details_page(Me, 'Moment') end,
+    Overrides = { Id = UiPages.Moment.button_id },
   }
 
 local Load_Alarm_1_Btn =
   {
     Text = '>',
-    Handler = function(Me) replace_content(Me, 'alarm_1') end,
+    Handler = function(Me) set_details_page(Me, 'Alarm_1') end,
+    Overrides = { Id = UiPages.Alarm_1.button_id },
   }
 
 local Load_Alarm_2_Btn =
   {
     Text = '>',
-    Handler = function(Me) replace_content(Me, 'alarm_2') end,
+    Handler = function(Me) set_details_page(Me, 'Alarm_2') end,
+    Overrides = { Id = UiPages.Alarm_2.button_id },
   }
 
 local Load_Core_Btn =
   {
     Text = '>',
-    Handler = function(Me) replace_content(Me, 'core') end,
+    Handler = function(Me) set_details_page(Me, 'Core') end,
+    Overrides = { Id = UiPages.Core.button_id },
   }
 
 local create_status_control_block =
@@ -171,12 +211,12 @@ local create_status_control_block =
       )
   end
 
-local create_right_pane =
+local create_details_pane =
   function(Me)
     return
       create_ver_group(
         {
-          Overrides = { Id = 'right_pane' },
+          Overrides = { Id = 'details_pane' },
           Contents = { },
         }
       )
@@ -187,10 +227,10 @@ local create_right_pane =
 ]]
 local create_content =
   function(Me)
-    moment_block = create_moment_block(Me)
-    alarm_1_block = create_alarm_1_block(Me)
-    alarm_2_block = create_alarm_2_block(Me)
-    core_block = create_core_block(Me)
+    UiPages.Moment.Content = create_moment_block(Me)
+    UiPages.Alarm_1.Content = create_alarm_1_block(Me)
+    UiPages.Alarm_2.Content = create_alarm_2_block(Me)
+    UiPages.Core.Content = create_core_block(Me)
 
     return
       create_ver_group(
@@ -203,7 +243,7 @@ local create_content =
                   Contents =
                     {
                       create_status_control_block(Me),
-                      create_right_pane(Me),
+                      create_details_pane(Me),
                       create_button(Me, Save_Btn),
                     },
                 }
@@ -219,4 +259,5 @@ return create_content
 --[[
   2019 #
   2026-04-27
+  2026-05-17
 ]]
