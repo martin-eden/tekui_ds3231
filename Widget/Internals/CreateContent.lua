@@ -18,19 +18,6 @@ local create_core_block = request('CreateContent.create_core_block')
 
 local TekUi = require('tek.ui')
 
-local func_save = request('funcs.save')
-
-local Save_Btn =
-  {
-    Text = '^',
-    Handler = func_save,
-    Overrides =
-      {
-        Width = 'fill',
-        Height = 'fill'
-      },
-  }
-
 local create_moment_presentation_block =
   function(Me)
     return
@@ -148,10 +135,9 @@ local set_details_page =
 
     if not Page.is_loaded then
       set_details_content(Me, Page.Content)
-      Page.is_loaded = true
-    else
-      Page.is_loaded = false
     end
+
+    Page.is_loaded = not Page.is_loaded
 
     update_page_button_text(Me, page_name)
     -- )
@@ -185,6 +171,32 @@ local Load_Core_Btn =
     Text = '>',
     Handler = function(Me) set_details_page(Me, 'Core') end,
     Overrides = { Id = UiPages.Core.button_id },
+  }
+
+--[[
+  Save values from input fields to device
+
+  Data is loaded from device, updated with values from UI,
+  saved to device, loaded back, and UI values are updated.
+]]
+local func_save =
+  function(Me)
+    Me:DataFromRaw()
+    Me:DataFromUi()
+    Me:DataToRaw()
+    Me:DataFromRaw()
+    Me:DataToUi()
+  end
+
+local Save_Btn =
+  {
+    Text = '^',
+    Handler = func_save,
+    Overrides =
+      {
+        Width = 'fill',
+        Height = 'fill'
+      },
   }
 
 local create_status_control_block =
