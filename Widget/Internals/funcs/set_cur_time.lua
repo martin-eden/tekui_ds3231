@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-15
+  Last mod.: 2026-05-17
 ]]
 
 -- Imports:
@@ -59,6 +59,7 @@ local func_set_cur_time =
     -- Time is correct now, clear "bad time" flag
     Me.Data.Core.time_is_spoiled = false
 
+    Me:DataToRaw()
     Me:DataToUi()
   end
 
@@ -72,4 +73,5 @@ return func_set_cur_time
   2026-04-28
   2026-05-10
   2026-05-11
+  2026-05-17
 ]]
