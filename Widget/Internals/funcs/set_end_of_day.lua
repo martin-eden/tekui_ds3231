@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-17
 ]]
 
 -- Imports:
@@ -15,6 +15,7 @@ local set_end_of_day =
     OurData.Moment.minute = 59
     OurData.Moment.second = 59
 
+    Me:DataToRaw()
     Me:DataToUi()
   end
 
@@ -23,4 +24,5 @@ return set_end_of_day
 
 --[[
   2026-05-11
+  2026-05-17
 ]]
