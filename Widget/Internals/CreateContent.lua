@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-17
+  Last mod.: 2026-05-18
 ]]
 
 local create_hor_group = request('CreateContent.wrappers.create_hor_group')
@@ -74,7 +74,7 @@ local UiPages =
     Alarm_1 = { is_loaded = false, button_id = 'load_alarm_1', Content = { } },
     Alarm_2 = { is_loaded = false, button_id = 'load_alarm_2', Content = { } },
     Core = { is_loaded = false, button_id = 'load_core', Content = { } },
-    last_page_name = '',
+    last_page_name = 'Moment',
   }
 
 local empty_details_content =
@@ -101,11 +101,11 @@ local update_page_button_text =
     if is_nil(Page) then return end
 
     local button_id = Page.button_id
-    local page_is_visible = Page.is_loaded
+    local page_is_loaded = Page.is_loaded
 
     local DetailsButton = Me.TekUi_App:getById(button_id)
 
-    if page_is_visible then
+    if page_is_loaded then
       DetailsButton:setValue('Text', '<')
       DetailsButton:setValue('Style', 'font: ui-main/b')
     else
@@ -116,31 +116,26 @@ local update_page_button_text =
 
 local set_details_page =
   function(Me, page_name)
-    empty_details_content(Me)
-
-    -- ( Process last page
     local last_page_name = UiPages.last_page_name
+    local LastPage = UiPages[last_page_name]
+    local last_page_is_loaded = LastPage.is_loaded
 
-    if (last_page_name ~= '') and (last_page_name ~= page_name) then
-      local LastPage = UiPages[last_page_name]
+    local Page = UiPages[page_name]
+    local page_is_loaded = Page.is_loaded
+
+    if last_page_is_loaded then
+      empty_details_content(Me)
       LastPage.is_loaded = false
       update_page_button_text(Me, last_page_name)
     end
 
-    UiPages.last_page_name = page_name
-    -- )
-
-    -- ( Process current page
-    local Page = UiPages[page_name]
-
-    if not Page.is_loaded then
+    if not page_is_loaded then
       set_details_content(Me, Page.Content)
+      Page.is_loaded = true
+      update_page_button_text(Me, page_name)
     end
 
-    Page.is_loaded = not Page.is_loaded
-
-    update_page_button_text(Me, page_name)
-    -- )
+    UiPages.last_page_name = page_name
 
     Me:DataToUi()
   end
