@@ -2,18 +2,16 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-13
+  Last mod.: 2026-05-18
 ]]
 
 -- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local text_label_ra = request('!.frontend.tekui.text_label_ra')
 local text_label_la = request('!.frontend.tekui.text_label_la')
 local radio_mark = request('!.frontend.tekui.radio_button')
 local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
-local create_button = request('wrappers.create_button')
 
 local create_freq_selector_block =
   function(Me)

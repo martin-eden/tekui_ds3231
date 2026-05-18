@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-15
+  Last mod.: 2026-05-18
 ]]
 
 --[[
@@ -41,7 +41,6 @@ return
     Tickers = { },
 
     ui_width = 460,
-    ui_status_style = 'font: /b; color: #0049B7',
 
     DataFromRaw = request('DataFromRaw'),
     DataToUi = request('DataToUi'),

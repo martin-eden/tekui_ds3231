@@ -2,29 +2,31 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-18
 ]]
 
--- Imports:
+-- ( Imports
 local func_set_cur_time = request('^.funcs.set_cur_time')
 local func_set_end_of_day = request('^.funcs.set_end_of_day')
+
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local text_label = request('!.frontend.tekui.text_label')
+
 local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
 local create_button = request('wrappers.create_button')
+-- )
 
 local SetCurTime_Btn =
   {
-    Text = 'Set _current time',
-    Handler = func_set_cur_time,
+    text = 'Set _current time',
+    handler = func_set_cur_time,
   }
 
 local SetEndOfDay_Btn =
   {
-    Text = 'Set _end of day',
-    Handler = func_set_end_of_day,
+    text = 'Set _end of day',
+    handler = func_set_end_of_day,
   }
 
 local create_moment_inputs_block =

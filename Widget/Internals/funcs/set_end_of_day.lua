@@ -2,10 +2,8 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-17
+  Last mod.: 2026-05-18
 ]]
-
--- Imports:
 
 local set_end_of_day =
   function(Me)

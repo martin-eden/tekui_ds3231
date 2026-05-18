@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-13
+  Last mod.: 2026-05-18
 ]]
 
 -- Imports:
@@ -13,16 +13,18 @@ local merge_and_patch = request('!.table.merge_and_patch')
   Create button for TekUi from our custom input format:
 
     {
-      Text [s]
-      Handler [f]
+      name [s]
+      text [s]
+      handler [f]
       Overrides [t] -- table with TekUI properties
     }
 ]]
 
 local create_button =
   function(Me, Button, Overrides)
-    local caption = Button.Text
-    local handler = Button.Handler
+    local name = Button.name
+    local caption = Button.text
+    local handler = Button.handler
 
     assert_string(caption)
     assert_function(handler)
@@ -34,6 +36,7 @@ local create_button =
 
     local ButtonOverrides =
       {
+        Id = name,
         onClick = tekui_button_handler,
       }
 
@@ -50,4 +53,5 @@ return create_button
   2026-04-29
   2026-05-12
   2026-05-13
+  2026-05-18
 ]]
