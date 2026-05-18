@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-18
 ]]
 
 -- Imports:
@@ -48,6 +48,12 @@ return
 
     local Result = { }
 
+    if Alarm.occurred then
+      add_to_list(Result, '[x]')
+    else
+      add_to_list(Result, '[·]')
+    end
+
     add_to_list(Result, 'at')
 
     if not Alarm.ignore_dateday then
@@ -69,4 +75,5 @@ return
   2020 #
   2026-04-28
   2026-04-29
+  2026-05-18
 ]]
