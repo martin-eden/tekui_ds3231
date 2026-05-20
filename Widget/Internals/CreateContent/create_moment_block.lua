@@ -11,8 +11,8 @@ local func_set_end_of_day = request('^.funcs.set_end_of_day')
 
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
+local create_input_box = request('wrappers.create_input_box')
 
-local input_box = request('!.frontend.tekui.input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
 local create_button = request('wrappers.create_button')
 -- )
@@ -37,13 +37,13 @@ local create_moment_inputs_block =
           Overrides = { Width = 'free' },
           Contents =
             {
-              input_box('', 'moment_year'),
-              input_box('', 'moment_month'),
-              input_box('', 'moment_date'),
-              input_box('', 'moment_day'),
-              input_box('', 'moment_hour'),
-              input_box('', 'moment_minute'),
-              input_box('', 'moment_second')
+              create_input_box({ name = 'moment_year' }),
+              create_input_box({ name = 'moment_month' }),
+              create_input_box({ name = 'moment_date' }),
+              create_input_box({ name = 'moment_day' }),
+              create_input_box({ name = 'moment_hour' }),
+              create_input_box({ name = 'moment_minute' }),
+              create_input_box({ name = 'moment_second' })
             },
         }
       )

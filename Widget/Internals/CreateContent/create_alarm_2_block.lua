@@ -2,13 +2,13 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-21
 ]]
 
 -- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local input_box = request('!.frontend.tekui.input_box')
+local create_input_box = request('wrappers.create_input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
 local radio_mark = request('!.frontend.tekui.radio_button')
 local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')
@@ -60,7 +60,7 @@ local create_day_select_block =
             {
               create_any_rb('alarm_2_dateday_any'),
               create_spec_rb('alarm_2_dateday_spec'),
-              input_box('', 'alarm_2_dateday'),
+              create_input_box({ name = 'alarm_2_dateday' }),
             },
         }
       )
@@ -77,7 +77,7 @@ local create_hour_select_block =
             {
               create_any_rb('alarm_2_hour_any'),
               create_spec_rb('alarm_2_hour_spec'),
-              input_box('', 'alarm_2_hour'),
+              create_input_box({ name = 'alarm_2_hour' }),
             },
         }
       )
@@ -94,7 +94,7 @@ local create_minute_select_block =
             {
               create_any_rb('alarm_2_minute_any'),
               create_spec_rb('alarm_2_minute_spec'),
-              input_box('', 'alarm_2_minute'),
+              create_input_box({ name = 'alarm_2_minute' }),
             },
         }
       )

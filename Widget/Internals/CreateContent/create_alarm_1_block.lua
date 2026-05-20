@@ -2,13 +2,13 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-21
 ]]
 
 -- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local input_box = request('!.frontend.tekui.input_box')
+local create_input_box = request('wrappers.create_input_box')
 local checkbox = request('!.frontend.tekui.checkbox')
 local radio_mark = request('!.frontend.tekui.radio_button')
 local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')
@@ -62,7 +62,7 @@ local create_day_select_block =
             {
               create_any_rb('alarm_1_dateday_any'),
               create_spec_rb('alarm_1_dateday_spec'),
-              input_box('', 'alarm_1_dateday'),
+              create_input_box({ name = 'alarm_1_dateday' }),
             },
         }
       )
@@ -79,7 +79,7 @@ local create_hour_select_block =
             {
               create_any_rb('alarm_1_hour_any'),
               create_spec_rb('alarm_1_hour_spec'),
-              input_box('', 'alarm_1_hour'),
+              create_input_box({ name = 'alarm_1_hour' }),
             },
         }
       )
@@ -96,7 +96,7 @@ local create_minute_select_block =
             {
               create_any_rb('alarm_1_minute_any'),
               create_spec_rb('alarm_1_minute_spec'),
-              input_box('', 'alarm_1_minute'),
+              create_input_box({ name = 'alarm_1_minute' }),
             },
         }
       )
@@ -113,7 +113,7 @@ local create_second_select_block =
             {
               create_any_rb('alarm_1_second_any'),
               create_spec_rb('alarm_1_second_spec'),
-              input_box('', 'alarm_1_second'),
+              create_input_box({ name = 'alarm_1_second' }),
             },
         }
       )
