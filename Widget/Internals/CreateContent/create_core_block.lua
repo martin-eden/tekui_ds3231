@@ -18,7 +18,7 @@ local create_freq_selector_block =
     return
       create_hor_group(
         {
-          caption = 'Wave',
+          caption = 'wave',
           Contents =
             {
               radio_mark('1 Hz', 'wave_freq_num_0'),
@@ -102,7 +102,7 @@ local create_temperature_block =
     return
       create_ver_group(
         {
-          caption = 'Temperature',
+          caption = 'temperature',
           Contents =
             {
               create_hor_group(
