@@ -56,7 +56,7 @@ local create_day_select_block =
     return
       create_ver_group(
         {
-          Text = 'day',
+          caption = 'day',
           Overrides = { Width = 'free' },
           Contents =
             {
@@ -73,7 +73,7 @@ local create_hour_select_block =
     return
       create_ver_group(
         {
-          Text = 'hour',
+          caption = 'hour',
           Overrides = { Width = 'free' },
           Contents =
             {
@@ -90,7 +90,7 @@ local create_minute_select_block =
     return
       create_ver_group(
         {
-          Text = 'minute',
+          caption = 'minute',
           Overrides = { Width = 'free' },
           Contents =
             {
@@ -107,7 +107,7 @@ local create_second_select_block =
     return
       create_ver_group(
         {
-          Text = 'second',
+          caption = 'second',
           Overrides = { Width = 'free' },
           Contents =
             {

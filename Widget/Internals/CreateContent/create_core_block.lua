@@ -18,7 +18,7 @@ local create_freq_selector_block =
     return
       create_hor_group(
         {
-          Text = 'Wave',
+          caption = 'Wave',
           Contents =
             {
               radio_mark('1 Hz', 'wave_freq_num_0'),
@@ -35,7 +35,7 @@ local create_square_wave_block =
     return
       create_ver_group(
         {
-          Text = 'output pin',
+          caption = 'output pin',
           Contents =
             {
               create_freq_selector_block(Me),
@@ -55,7 +55,7 @@ local create_battery_mode_block =
     return
       create_ver_group(
         {
-          Text = 'at battery',
+          caption = 'at battery',
           Contents =
             {
               checkbox('stop clock', false, 'atbattery_clock_disabled'),
@@ -102,7 +102,7 @@ local create_temperature_block =
     return
       create_ver_group(
         {
-          Text = 'Temperature',
+          caption = 'Temperature',
           Contents =
             {
               create_hor_group(
@@ -124,7 +124,7 @@ local create_output_pins_block =
     return
       create_ver_group(
         {
-          Text = 'output',
+          caption = 'output',
           Contents =
             {
               checkbox('Enable 32 KiHz pin', false, 'enable_wave_32k'),
