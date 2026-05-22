@@ -1,3 +1,5 @@
+Names mapping between internal data structure and UI field names
+
 Core
   is_busy                   is_busy
   time_is_spoiled           time_is_spoiled
@@ -30,8 +32,8 @@ Moment
   second            moment_second
 
 Alarm_1
-  enabled           alarm_1_enabled,
-  occurred          alarm_1_occurred,
+  enabled           alarm_1_enabled
+  occurred          alarm_1_occurred
 
   dateday           alarm_1_dateday
   is_day            alarm_1_is_day
@@ -48,8 +50,8 @@ Alarm_1
   ignore_second     ( alarm_1_second_any alarm_1_second_spec )
 
 Alarm_2
-  enabled           alarm_2_enabled,
-  occurred          alarm_2_occurred,
+  enabled           alarm_2_enabled
+  occurred          alarm_2_occurred
 
   dateday           alarm_2_dateday
   is_day            alarm_2_is_day
