@@ -30,6 +30,7 @@ local adjust_alarms =
   function(Checkboxes)
     assert_table(Checkboxes)
     assert_integer(Checkboxes.NextOffset)
+
     return
       function(TuiElem)
         -- Run base handler first.

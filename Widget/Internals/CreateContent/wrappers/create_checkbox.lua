@@ -8,9 +8,9 @@
 --[[
   Input format
 
-    name [s] -- identifier
-    description [s] -- UI description line
-    Overrides [t?] -- optional TekUi properties
+    1 name [s] -- identifier
+    2 description [s] -- UI description line
+    3 Overrides [t?] -- optional TekUi properties
 ]]
 
 -- Imports:
