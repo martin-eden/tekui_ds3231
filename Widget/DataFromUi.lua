@@ -2,16 +2,16 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-15
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
 local merge_and_patch = request('!.table.merge_and_patch')
 
-local get_moment = request('Internals.OurDataAndUi.moment_page_to_data')
-local get_alarm_1 = request('Internals.OurDataAndUi.alarm_1_page_to_data')
-local get_alarm_2 = request('Internals.OurDataAndUi.alarm_2_page_to_data')
-local get_core = request('Internals.OurDataAndUi.core_page_to_data')
+local get_moment = request('Internals.convert.moment_page_to_data')
+local get_alarm_1 = request('Internals.convert.alarm_1_page_to_data')
+local get_alarm_2 = request('Internals.convert.alarm_2_page_to_data')
+local get_core = request('Internals.convert.core_page_to_data')
 
 local DataFromUi =
   function(Me)

@@ -2,14 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-12
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
-local set_moment = request('Internals.OurDataAndUi.moment_page_from_data')
-local set_alarm_1 = request('Internals.OurDataAndUi.alarm_1_page_from_data')
-local set_alarm_2 = request('Internals.OurDataAndUi.alarm_2_page_from_data')
-local set_core = request('Internals.OurDataAndUi.core_page_from_data')
+local set_moment = request('Internals.convert.moment_page_from_data')
+local set_alarm_1 = request('Internals.convert.alarm_1_page_from_data')
+local set_alarm_2 = request('Internals.convert.alarm_2_page_from_data')
+local set_core = request('Internals.convert.core_page_from_data')
 
 local DataToUi =
   function(Me)
