@@ -2,16 +2,16 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-10
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
 local bytes_from_str = request('!.convert.bytes_from_str')
-local our_data_to_rtc = request('Internals.convert.our_data_to_rtc')
+local data_to_rtc = request('Internals.convert.data_to_rtc')
 
 local DataToRaw =
   function(Me)
-    local RtcRec = our_data_to_rtc(Me.Data)
+    local RtcRec = data_to_rtc(Me.Data)
     local data_str = Me.Ds3231_Codec:Compile(RtcRec)
     Me.RawDataProvider:Save(bytes_from_str(data_str))
   end

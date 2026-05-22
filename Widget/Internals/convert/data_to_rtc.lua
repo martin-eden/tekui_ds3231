@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
@@ -53,7 +53,7 @@ local set_temperature =
     return TempRec
   end
 
-local our_data_to_rtc =
+local data_to_rtc =
   function(OurData)
     return
       {
@@ -141,7 +141,7 @@ local our_data_to_rtc =
   end
 
 -- Export:
-return our_data_to_rtc
+return data_to_rtc
 
 --[[
   2026-05-09
