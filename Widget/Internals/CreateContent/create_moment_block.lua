@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-18
+  Last mod.: 2026-05-22
 ]]
 
 -- ( Imports
@@ -72,8 +72,8 @@ local create_moment_block =
           Contents =
             {
               create_moment_inputs_block(Me),
-              checkbox('AM/PM hour format', false, 'moment_store_hour_in_12h'),
               checkbox('Is next century', false, 'moment_is_next_century'),
+              checkbox('AM/PM hour format', false, 'moment_store_hour_in_12h'),
               create_buttons_block(Me),
             },
         }
