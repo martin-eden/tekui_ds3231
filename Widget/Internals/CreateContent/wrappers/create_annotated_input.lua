@@ -1,4 +1,4 @@
--- [TekUi] Create input box grouped with annotation text
+-- [TekUi] Create input box grouped with annotation text at right
 
 --[[
   Author: Martin Eden
