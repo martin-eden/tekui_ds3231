@@ -9,8 +9,8 @@
 local func_set_cur_time = request('^.funcs.set_cur_time')
 local func_set_end_of_day = request('^.funcs.set_end_of_day')
 
-local create_hor_group = request('wrappers.create_hor_group')
-local create_ver_group = request('wrappers.create_ver_group')
+local create_hor_group = request('!.frontend.tekui.create_hor_group')
+local create_ver_group = request('!.frontend.tekui.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
 local create_checkbox = request('wrappers.create_checkbox')
 local create_button = request('wrappers.create_button')

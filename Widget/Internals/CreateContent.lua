@@ -11,8 +11,8 @@ local create_alarm_1_block = request('CreateContent.create_alarm_1_block')
 local create_alarm_2_block = request('CreateContent.create_alarm_2_block')
 local create_core_block = request('CreateContent.create_core_block')
 
-local create_hor_group = request('CreateContent.wrappers.create_hor_group')
-local create_ver_group = request('CreateContent.wrappers.create_ver_group')
+local create_hor_group = request('!.frontend.tekui.create_hor_group')
+local create_ver_group = request('!.frontend.tekui.create_ver_group')
 local create_button = request('CreateContent.wrappers.create_button')
 local create_text_label = request('CreateContent.wrappers.create_text_label')
 
