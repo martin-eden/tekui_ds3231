@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-18
+  Last mod.: 2026-05-22
 ]]
 
 --[[
@@ -22,10 +22,7 @@ local create_text_label =
     local name = Label.name
     local text = Label.text
 
-    local Overrides =
-      {
-        Id = name,
-      }
+    local Overrides = { Id = name }
 
     merge_and_patch(Overrides, Label.Overrides)
 
