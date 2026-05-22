@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-21
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
@@ -100,20 +100,13 @@ local create_temperature_input_block =
 local create_temperature_block =
   function(Me)
     return
-      create_ver_group(
+      create_hor_group(
         {
           caption = 'temperature',
           Contents =
             {
-              create_hor_group(
-                {
-                  Contents =
-                    {
-                      create_temperature_input_block(Me),
-                      checkbox('get temperature', false, 'get_temperature'),
-                    },
-                }
-              ),
+              create_temperature_input_block(Me),
+              checkbox('get temperature', false, 'get_temperature'),
             },
         }
       )
