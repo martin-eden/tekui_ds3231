@@ -10,7 +10,7 @@ local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
 local create_checkbox = request('wrappers.create_checkbox')
-local radio_mark = request('!.frontend.tekui.radio_button')
+local create_choice_item = request('wrappers.create_choice_item')
 local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')
 
 local correct_flags_any =
@@ -38,16 +38,16 @@ local correct_flags_spec =
 local create_any_rb =
   function(elem_id)
     return
-      radio_mark(
-        'any', elem_id, { onSelect = correct_flags_any }
+      create_choice_item(
+        elem_id, 'any', { onSelect = correct_flags_any }
       )
   end
 
 local create_spec_rb =
   function(elem_id)
     return
-      radio_mark(
-        'specific', elem_id, { onSelect = correct_flags_spec }
+      create_choice_item(
+        elem_id, 'specific', { onSelect = correct_flags_spec }
       )
   end
 

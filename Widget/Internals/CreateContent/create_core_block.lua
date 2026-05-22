@@ -5,13 +5,15 @@
   Last mod.: 2026-05-22
 ]]
 
--- Imports:
+-- ( Imports
+local text_label_la = request('!.frontend.tekui.text_label_la')
+
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
 local create_checkbox = request('wrappers.create_checkbox')
-local text_label_la = request('!.frontend.tekui.text_label_la')
-local radio_mark = request('!.frontend.tekui.radio_button')
+local create_choice_item = request('wrappers.create_choice_item')
+-- )
 
 local create_freq_selector_block =
   function(Me)
@@ -21,10 +23,10 @@ local create_freq_selector_block =
           caption = 'wave',
           Contents =
             {
-              radio_mark('1 Hz', 'wave_freq_num_0'),
-              radio_mark('1 KiHz', 'wave_freq_num_1'),
-              radio_mark('4 KiHz', 'wave_freq_num_2'),
-              radio_mark('8 KiHz', 'wave_freq_num_3'),
+              create_choice_item('wave_freq_num_0', '1 Hz'),
+              create_choice_item('wave_freq_num_1', '1 KiHz'),
+              create_choice_item('wave_freq_num_2', '4 KiHz'),
+              create_choice_item('wave_freq_num_3', '8 KiHz'),
             },
         }
       )
