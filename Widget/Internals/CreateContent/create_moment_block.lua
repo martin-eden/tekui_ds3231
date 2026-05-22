@@ -29,7 +29,7 @@ local SetEndOfDay_Btn =
   }
 
 local create_moment_inputs_block =
-  function(Me)
+  function()
     return
       create_hor_group(
         {
@@ -70,7 +70,7 @@ local create_moment_block =
           Overrides = { Width = Me.ui_width },
           Contents =
             {
-              create_moment_inputs_block(Me),
+              create_moment_inputs_block(),
               create_checkbox('moment_is_next_century', 'Is next century'),
               create_checkbox('moment_store_hour_in_12h', 'AM/PM hour format'),
               create_buttons_block(Me),

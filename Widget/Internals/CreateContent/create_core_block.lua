@@ -13,7 +13,7 @@ local create_checkbox = request('wrappers.create_checkbox')
 local create_choice_item = request('wrappers.create_choice_item')
 
 local create_freq_selector_block =
-  function(Me)
+  function()
     return
       create_hor_group(
         {
@@ -30,14 +30,14 @@ local create_freq_selector_block =
 end
 
 local create_square_wave_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
           caption = 'output pin',
           Contents =
             {
-              create_freq_selector_block(Me),
+              create_freq_selector_block(),
               create_checkbox('output_is_from_alarms', 'output ALARMS, not wave'),
             },
         }
@@ -45,7 +45,7 @@ local create_square_wave_block =
   end
 
 local create_battery_mode_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -60,7 +60,7 @@ local create_battery_mode_block =
   end
 
 local create_temperature_block =
-  function(Me)
+  function()
     return
       create_hor_group(
         {
@@ -75,7 +75,7 @@ local create_temperature_block =
   end
 
 local create_output_pins_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -83,7 +83,7 @@ local create_output_pins_block =
           Contents =
             {
               create_checkbox('enable_wave_32k', 'Enable 32 KiHz pin'),
-              create_square_wave_block(Me),
+              create_square_wave_block(),
             },
         }
       )
@@ -100,9 +100,9 @@ local create_core_block =
               create_checkbox('is_busy', 'is busy'),
               create_checkbox('time_is_spoiled', 'clock was stopped'),
               create_annotated_input('speed_trim', 40, 'clock speed trimming'),
-              create_output_pins_block(Me),
-              create_battery_mode_block(Me),
-              create_temperature_block(Me),
+              create_output_pins_block(),
+              create_battery_mode_block(),
+              create_temperature_block(),
             },
         }
       )

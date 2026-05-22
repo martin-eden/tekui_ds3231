@@ -52,7 +52,7 @@ local create_spec_rb =
   end
 
 local create_day_select_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -69,7 +69,7 @@ local create_day_select_block =
   end
 
 local create_hour_select_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -86,7 +86,7 @@ local create_hour_select_block =
   end
 
 local create_minute_select_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -103,7 +103,7 @@ local create_minute_select_block =
   end
 
 local create_second_select_block =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -120,16 +120,16 @@ local create_second_select_block =
   end
 
 local create_alarm_inputs_block =
-  function(Me)
+  function()
     return
       create_hor_group(
         {
           Contents =
             {
-              create_day_select_block(Me),
-              create_hour_select_block(Me),
-              create_minute_select_block(Me),
-              create_second_select_block(Me),
+              create_day_select_block(),
+              create_hour_select_block(),
+              create_minute_select_block(),
+              create_second_select_block(),
             },
         }
       )
@@ -145,7 +145,7 @@ local create_alarm_1_block =
             {
               create_checkbox('alarm_1_occurred', 'occurred'),
               create_checkbox('alarm_1_enabled', 'enable output'),
-              create_alarm_inputs_block(Me),
+              create_alarm_inputs_block(),
               create_checkbox('alarm_1_is_day', 'is day of week'),
               create_checkbox('alarm_1_store_hour_in_12h', 'AM/PM hour format'),
             },

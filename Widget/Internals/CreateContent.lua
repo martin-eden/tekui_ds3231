@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-18
+  Last mod.: 2026-05-22
 ]]
 
 -- ( Imports
@@ -14,7 +14,6 @@ local create_core_block = request('CreateContent.create_core_block')
 local create_hor_group = request('CreateContent.wrappers.create_hor_group')
 local create_ver_group = request('CreateContent.wrappers.create_ver_group')
 local create_button = request('CreateContent.wrappers.create_button')
-
 local create_text_label = request('CreateContent.wrappers.create_text_label')
 
 local TekUi = require('tek.ui')
@@ -23,60 +22,45 @@ local TekUi = require('tek.ui')
 local presentation_text_style = 'font: /b; color: #0049B7'
 
 local create_moment_presentation_block =
-  function(Me)
-    local name = 'moment_presentation'
-
+  function()
     return
       create_text_label(
         {
-          name = name,
-          text = '',
+          name = 'moment_presentation',
           Overrides =
-            {
-              Style = presentation_text_style,
-              Width = 400,
-            },
+            { Style = presentation_text_style, Width = 400 },
         }
       )
   end
 
 local create_alarm_1_presentation_block =
-  function(Me)
-    local name = 'alarm_1_presentation'
-
+  function()
     return
       create_text_label(
         {
-          name = name,
-          text = '',
+          name = 'alarm_1_presentation',
           Overrides = { Style = presentation_text_style },
         }
       )
   end
 
 local create_alarm_2_presentation_block =
-  function(Me)
-    local name = 'alarm_2_presentation'
-
+  function()
     return
       create_text_label(
         {
-          name = name,
-          text = '',
+          name = 'alarm_2_presentation',
           Overrides = { Style = presentation_text_style },
         }
       )
   end
 
 local create_core_presentation_block =
-  function(Me)
-    local name = 'core_presentation'
-
+  function()
     return
       create_text_label(
         {
-          name = name,
-          text = '',
+          name = 'core_presentation',
           Overrides = { Style = presentation_text_style },
         }
       )
@@ -86,13 +70,13 @@ local create_core_presentation_block =
 local UiPages =
   {
     ['Moment'] =
-      { button_id = 'load_moment', is_loaded = false, Content = { } },
+      { button_name = 'load_moment', is_loaded = false, Content = { } },
     ['Alarm_1'] =
-      { button_id = 'load_alarm_1', is_loaded = false, Content = { } },
+      { button_name = 'load_alarm_1', is_loaded = false, Content = { } },
     ['Alarm_2'] =
-      { button_id = 'load_alarm_2', is_loaded = false, Content = { } },
+      { button_name = 'load_alarm_2', is_loaded = false, Content = { } },
     ['Core'] =
-      { button_id = 'load_core', is_loaded = false, Content = { } },
+      { button_name = 'load_core', is_loaded = false, Content = { } },
 
     last_page_name = 'Moment',
   }
@@ -120,10 +104,10 @@ local update_page_button_text =
 
     if is_nil(Page) then return end
 
-    local button_id = Page.button_id
+    local button_name = Page.button_name
     local page_is_loaded = Page.is_loaded
 
-    local DetailsButton = Me.TekUi_App:getById(button_id)
+    local DetailsButton = Me.TekUi_App:getById(button_name)
 
     if page_is_loaded then
       DetailsButton:setValue('Text', '<')
@@ -162,28 +146,28 @@ local set_details_page =
 
 local Load_Moment_Btn =
   {
-    name = UiPages.Moment.button_id,
+    name = UiPages.Moment.button_name,
     text = '>',
     handler = function(Me) set_details_page(Me, 'Moment') end,
   }
 
 local Load_Alarm_1_Btn =
   {
-    name = UiPages.Alarm_1.button_id,
+    name = UiPages.Alarm_1.button_name,
     text = '>',
     handler = function(Me) set_details_page(Me, 'Alarm_1') end,
   }
 
 local Load_Alarm_2_Btn =
   {
-    name = UiPages.Alarm_2.button_id,
+    name = UiPages.Alarm_2.button_name,
     text = '>',
     handler = function(Me) set_details_page(Me, 'Alarm_2') end,
   }
 
 local Load_Core_Btn =
   {
-    name = UiPages.Core.button_id,
+    name = UiPages.Core.button_name,
     text = '>',
     handler = function(Me) set_details_page(Me, 'Core') end,
   }
@@ -218,16 +202,16 @@ local create_status_control_block =
           Overrides = { Columns = 2 },
           Contents =
             {
-              create_moment_presentation_block(Me),
+              create_moment_presentation_block(),
               create_button(Me, Load_Moment_Btn),
 
-              create_alarm_1_presentation_block(Me),
+              create_alarm_1_presentation_block(),
               create_button(Me, Load_Alarm_1_Btn),
 
-              create_alarm_2_presentation_block(Me),
+              create_alarm_2_presentation_block(),
               create_button(Me, Load_Alarm_2_Btn),
 
-              create_core_presentation_block(Me),
+              create_core_presentation_block(),
               create_button(Me, Load_Core_Btn),
             },
         }
@@ -235,7 +219,7 @@ local create_status_control_block =
   end
 
 local create_details_pane =
-  function(Me)
+  function()
     return
       create_ver_group(
         {
@@ -256,21 +240,13 @@ local create_content =
     UiPages.Core.Content = create_core_block(Me)
 
     return
-      create_ver_group(
+      create_hor_group(
         {
-          -- Overrides = { Width = 700 },
           Contents =
             {
-              create_hor_group(
-                {
-                  Contents =
-                    {
-                      create_status_control_block(Me),
-                      create_details_pane(Me),
-                      create_button(Me, Save_Btn),
-                    },
-                }
-              ),
+              create_status_control_block(Me),
+              create_details_pane(),
+              create_button(Me, Save_Btn),
             },
         }
       )
@@ -283,4 +259,5 @@ return create_content
   2019 #
   2026-04-27
   2026-05-17
+  2026-05-22
 ]]
