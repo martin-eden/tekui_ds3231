@@ -8,7 +8,7 @@
 -- Imports:
 local create_hor_group = request('!.frontend.tekui.create_hor_group')
 local create_ver_group = request('!.frontend.tekui.create_ver_group')
-local create_input_box = request('wrappers.create_input_box')
+local create_input_box = request('!.frontend.tekui.create_input_box')
 local create_checkbox = request('wrappers.create_checkbox')
 local create_choice_item = request('wrappers.create_choice_item')
 local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')

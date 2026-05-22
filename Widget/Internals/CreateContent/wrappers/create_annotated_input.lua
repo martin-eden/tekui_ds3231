@@ -15,7 +15,7 @@
 
 -- Imports:
 local create_hor_group = request('!.frontend.tekui.create_hor_group')
-local create_input_box = request('create_input_box')
+local create_input_box = request('!.frontend.tekui.create_input_box')
 local create_text_label = request('create_text_label')
 
 local create_annotated_input =
