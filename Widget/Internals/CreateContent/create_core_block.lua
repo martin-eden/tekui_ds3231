@@ -5,15 +5,12 @@
   Last mod.: 2026-05-22
 ]]
 
--- ( Imports
-local text_label_la = request('!.frontend.tekui.text_label_la')
-
+-- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
-local create_input_box = request('wrappers.create_input_box')
+local create_annotated_input = request('wrappers.create_annotated_input')
 local create_checkbox = request('wrappers.create_checkbox')
 local create_choice_item = request('wrappers.create_choice_item')
--- )
 
 local create_freq_selector_block =
   function(Me)
@@ -62,34 +59,6 @@ local create_battery_mode_block =
       )
   end
 
-local create_speed_trim_input_block =
-  function(Me)
-    return
-      create_hor_group(
-        {
-          Contents =
-            {
-              create_input_box('speed_trim', { Width = 40 }),
-              text_label_la('clock speed trimming'),
-            },
-        }
-      )
-  end
-
-local create_temperature_input_block =
-  function(Me)
-    return
-      create_hor_group(
-        {
-          Contents =
-            {
-              create_input_box('temperature', { Width = 50 }),
-              text_label_la('temperature'),
-            },
-        }
-      )
-  end
-
 local create_temperature_block =
   function(Me)
     return
@@ -98,7 +67,7 @@ local create_temperature_block =
           caption = 'temperature',
           Contents =
             {
-              create_temperature_input_block(Me),
+              create_annotated_input('temperature', 50, 'temperature'),
               create_checkbox('get_temperature', 'get temperature'),
             },
         }
@@ -130,7 +99,7 @@ local create_core_block =
             {
               create_checkbox('is_busy', 'is busy'),
               create_checkbox('time_is_spoiled', 'clock was stopped'),
-              create_speed_trim_input_block(Me),
+              create_annotated_input('speed_trim', 40, 'clock speed trimming'),
               create_output_pins_block(Me),
               create_battery_mode_block(Me),
               create_temperature_block(Me),
