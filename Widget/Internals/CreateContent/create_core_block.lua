@@ -8,7 +8,7 @@
 -- Imports:
 local create_hor_group = request('!.frontend.tekui.create_hor_group')
 local create_ver_group = request('!.frontend.tekui.create_ver_group')
-local create_annotated_input = request('wrappers.create_annotated_input')
+local create_annotated_hor_input = request('wrappers.create_annotated_hor_input')
 local create_checkbox = request('wrappers.create_checkbox')
 local create_choice_item = request('wrappers.create_choice_item')
 
@@ -67,7 +67,7 @@ local create_temperature_block =
           caption = 'temperature',
           Contents =
             {
-              create_annotated_input('temperature', 50, 'temperature'),
+              create_annotated_hor_input('temperature', 50, 'temperature'),
               create_checkbox('get_temperature', 'get temperature'),
             },
         }
@@ -99,7 +99,7 @@ local create_core_block =
             {
               create_checkbox('is_busy', 'is busy'),
               create_checkbox('time_is_spoiled', 'clock was stopped'),
-              create_annotated_input('speed_trim', 40, 'clock speed trimming'),
+              create_annotated_hor_input('speed_trim', 40, 'clock speed trimming'),
               create_output_pins_block(),
               create_battery_mode_block(),
               create_temperature_block(),
