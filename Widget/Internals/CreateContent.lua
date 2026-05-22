@@ -5,6 +5,25 @@
   Last mod.: 2026-05-22
 ]]
 
+--[[
+  Contract
+
+  Return function that returns table with content layout for TekUi.
+]]
+
+--[[
+  Non-trivial parts
+
+  We're using horizontal group of three panels.
+
+  First panel is 4x2 grid of status text and details button.
+  Second panel is dynamically filled when details button is pressed.
+  Third panel is one "save" button stretched by window height.
+
+  All content is calculated just once. Dynamic second panel uses
+  precalculated sub-layouts.
+]]
+
 -- ( Imports
 local create_moment_block = request('CreateContent.create_moment_block')
 local create_alarm_1_block = request('CreateContent.create_alarm_1_block')
