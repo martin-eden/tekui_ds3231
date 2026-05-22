@@ -62,7 +62,7 @@ local create_day_select_block =
             {
               create_any_rb('alarm_1_dateday_any'),
               create_spec_rb('alarm_1_dateday_spec'),
-              create_input_box({ name = 'alarm_1_dateday' }),
+              create_input_box('alarm_1_dateday'),
             },
         }
       )
@@ -79,7 +79,7 @@ local create_hour_select_block =
             {
               create_any_rb('alarm_1_hour_any'),
               create_spec_rb('alarm_1_hour_spec'),
-              create_input_box({ name = 'alarm_1_hour' }),
+              create_input_box('alarm_1_hour'),
             },
         }
       )
@@ -96,7 +96,7 @@ local create_minute_select_block =
             {
               create_any_rb('alarm_1_minute_any'),
               create_spec_rb('alarm_1_minute_spec'),
-              create_input_box({ name = 'alarm_1_minute' }),
+              create_input_box('alarm_1_minute'),
             },
         }
       )
@@ -113,7 +113,7 @@ local create_second_select_block =
             {
               create_any_rb('alarm_1_second_any'),
               create_spec_rb('alarm_1_second_spec'),
-              create_input_box({ name = 'alarm_1_second' }),
+              create_input_box('alarm_1_second'),
             },
         }
       )

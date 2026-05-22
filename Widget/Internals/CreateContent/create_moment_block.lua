@@ -36,13 +36,13 @@ local create_moment_inputs_block =
           Overrides = { Width = 'free' },
           Contents =
             {
-              create_input_box({ name = 'moment_year' }),
-              create_input_box({ name = 'moment_month' }),
-              create_input_box({ name = 'moment_date' }),
-              create_input_box({ name = 'moment_day' }),
-              create_input_box({ name = 'moment_hour' }),
-              create_input_box({ name = 'moment_minute' }),
-              create_input_box({ name = 'moment_second' })
+              create_input_box('moment_year'),
+              create_input_box('moment_month'),
+              create_input_box('moment_date'),
+              create_input_box('moment_day'),
+              create_input_box('moment_hour'),
+              create_input_box('moment_minute'),
+              create_input_box('moment_second'),
             },
         }
       )

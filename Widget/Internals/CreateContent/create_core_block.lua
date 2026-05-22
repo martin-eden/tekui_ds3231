@@ -67,9 +67,7 @@ local create_speed_trim_input_block =
         {
           Contents =
             {
-              create_input_box(
-                { name = 'speed_trim', Overrides = { Width = 40 } }
-              ),
+              create_input_box('speed_trim', { Width = 40 }),
               text_label_la('clock speed trimming'),
             },
         }
@@ -83,9 +81,7 @@ local create_temperature_input_block =
         {
           Contents =
             {
-              create_input_box(
-                { name = 'temperature', Overrides = { Width = 50 } }
-              ),
+              create_input_box('temperature', { Width = 50 }),
               text_label_la('temperature'),
             },
         }

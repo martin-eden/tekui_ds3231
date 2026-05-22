@@ -2,25 +2,24 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-21
+  Last mod.: 2026-05-22
 ]]
 
 --[[
   Input data
 
-    name [?s]
-    value [?s]
-    Overrides [?t]
+    1 name [s]
+    2 Overrides [?t]
 ]]
 
 -- Imports:
 local ws_create_input_box = request('!.frontend.tekui.input_box')
 
 local create_input_box =
-  function(InputBox)
-    local name = InputBox.name
-    local value = InputBox.value
-    local Overrides = InputBox.Overrides
+  function(name, Overrides)
+    assert_string(name)
+
+    local value = ''
 
     return ws_create_input_box(value, name, Overrides)
   end
@@ -30,4 +29,5 @@ return create_input_box
 
 --[[
   2026-05-21
+  2026-05-22
 ]]
