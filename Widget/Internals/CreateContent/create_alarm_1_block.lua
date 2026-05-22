@@ -2,14 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-21
+  Last mod.: 2026-05-22
 ]]
 
 -- Imports:
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
-local checkbox = request('!.frontend.tekui.checkbox')
+local create_checkbox = request('wrappers.create_checkbox')
 local radio_mark = request('!.frontend.tekui.radio_button')
 local spawn_correct_alarm_flags = request('spawn_correct_alarm_flags')
 
@@ -143,11 +143,11 @@ local create_alarm_1_block =
           Overrides = { Width = Me.ui_width },
           Contents =
             {
-              checkbox('occurred', false, 'alarm_1_occurred'),
-              checkbox('enable output', false, 'alarm_1_enabled'),
+              create_checkbox('alarm_1_occurred', 'occurred'),
+              create_checkbox('alarm_1_enabled', 'enable output'),
               create_alarm_inputs_block(Me),
-              checkbox('is day of week', false, 'alarm_1_is_day'),
-              checkbox('AM/PM hour format', false, 'alarm_1_store_hour_in_12h'),
+              create_checkbox('alarm_1_is_day', 'is day of week'),
+              create_checkbox('alarm_1_store_hour_in_12h', 'AM/PM hour format'),
             },
         }
       )

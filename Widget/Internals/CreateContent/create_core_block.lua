@@ -9,9 +9,9 @@
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
+local create_checkbox = request('wrappers.create_checkbox')
 local text_label_la = request('!.frontend.tekui.text_label_la')
 local radio_mark = request('!.frontend.tekui.radio_button')
-local checkbox = request('!.frontend.tekui.checkbox')
 
 local create_freq_selector_block =
   function(Me)
@@ -39,12 +39,7 @@ local create_square_wave_block =
           Contents =
             {
               create_freq_selector_block(Me),
-              checkbox(
-                'output ALARMS, not wave',
-                false,
-                'output_is_from_alarms',
-                { Width = 'fill' }
-              ),
+              create_checkbox('output_is_from_alarms', 'output ALARMS, not wave'),
             },
         }
       )
@@ -58,8 +53,8 @@ local create_battery_mode_block =
           caption = 'at battery',
           Contents =
             {
-              checkbox('stop clock', false, 'atbattery_clock_disabled'),
-              checkbox('enable wave output', false, 'atbattery_enable_wave'),
+              create_checkbox('atbattery_clock_disabled', 'stop clock'),
+              create_checkbox('atbattery_enable_wave', 'enable wave output'),
             },
         }
       )
@@ -106,7 +101,7 @@ local create_temperature_block =
           Contents =
             {
               create_temperature_input_block(Me),
-              checkbox('get temperature', false, 'get_temperature'),
+              create_checkbox('get_temperature', 'get temperature'),
             },
         }
       )
@@ -120,7 +115,7 @@ local create_output_pins_block =
           caption = 'output',
           Contents =
             {
-              checkbox('Enable 32 KiHz pin', false, 'enable_wave_32k'),
+              create_checkbox('enable_wave_32k', 'Enable 32 KiHz pin'),
               create_square_wave_block(Me),
             },
         }
@@ -135,8 +130,8 @@ local create_core_block =
           Overrides = { Width = Me.ui_width },
           Contents =
             {
-              checkbox('is busy', false, 'is_busy'),
-              checkbox('clock was stopped', false, 'time_is_spoiled'),
+              create_checkbox('is_busy', 'is busy'),
+              create_checkbox('time_is_spoiled', 'clock was stopped'),
               create_speed_trim_input_block(Me),
               create_output_pins_block(Me),
               create_battery_mode_block(Me),

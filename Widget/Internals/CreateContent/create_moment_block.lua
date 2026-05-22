@@ -12,8 +12,7 @@ local func_set_end_of_day = request('^.funcs.set_end_of_day')
 local create_hor_group = request('wrappers.create_hor_group')
 local create_ver_group = request('wrappers.create_ver_group')
 local create_input_box = request('wrappers.create_input_box')
-
-local checkbox = request('!.frontend.tekui.checkbox')
+local create_checkbox = request('wrappers.create_checkbox')
 local create_button = request('wrappers.create_button')
 -- )
 
@@ -72,8 +71,8 @@ local create_moment_block =
           Contents =
             {
               create_moment_inputs_block(Me),
-              checkbox('Is next century', false, 'moment_is_next_century'),
-              checkbox('AM/PM hour format', false, 'moment_store_hour_in_12h'),
+              create_checkbox('moment_is_next_century', 'Is next century'),
+              create_checkbox('moment_store_hour_in_12h', 'AM/PM hour format'),
               create_buttons_block(Me),
             },
         }
