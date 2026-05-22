@@ -40,7 +40,7 @@ return
     Data = { },
     Tickers = { },
 
-    ui_width = 460,
+    ui_width = 400,
 
     DataFromRaw = request('DataFromRaw'),
     DataToUi = request('DataToUi'),
