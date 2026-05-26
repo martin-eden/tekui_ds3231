@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-22
+  Last mod.: 2026-05-26
 ]]
 
 -- Imports:
@@ -42,12 +42,12 @@ local set_temperature =
       TempRec.is_neg = true
 
       temperature = -temperature
+      temperature = 128 - temperature
     end
 
     local int_part, frac_part = math.modf(temperature)
 
     TempRec.int = math.tointeger(int_part)
-
     TempRec.frac = math.tointeger(4 * frac_part)
 
     return TempRec
@@ -147,4 +147,5 @@ return data_to_rtc
   2026-05-09
   2026-05-10
   2026-05-11
+  2026-05-26
 ]]

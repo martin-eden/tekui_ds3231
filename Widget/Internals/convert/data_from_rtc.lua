@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-22
+  Last mod.: 2026-05-26
 ]]
 
 -- Imports:
@@ -31,7 +31,10 @@ local get_temperature =
 
     local result
     result = int + frac / 4
-    if is_neg then result = -result end
+    if is_neg then
+      result = 128 - result
+      result = -result
+    end
 
     return result
   end
@@ -129,4 +132,5 @@ return data_from_rtc
 --[[
   2026-05-09
   2026-05-10
+  2026-05-26
 ]]
