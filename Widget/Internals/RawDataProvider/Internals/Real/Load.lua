@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-13
+  Last mod.: 2026-05-27
 ]]
 
 local read_chunk_size = 200
@@ -23,7 +23,7 @@ local Load =
       At substantial I2C read load with occasional I2C writes
       we'll start getting nothing from teletype. Re-reads won't help.
 
-      We don't know what what part is exactly failed, maybe Firmata
+      We don't know what part is exactly failed, maybe Firmata
       firmware itself. Bottom line is that we can't fulfill contract.
     ]]
     if (data_str == '') then return { } end
