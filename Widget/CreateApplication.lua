@@ -2,15 +2,15 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-15
+  Last mod.: 2026-05-30
 ]]
 
 --[[
   Input data
 
     (
-      IsVirtualDevice [b] -- do not connect to device
-      DeviceFileName [s] -- device file name
+      is_virtual_device [b] -- do not connect to device
+      device_file_name [s] -- device file name
     )
 ]]
 
@@ -26,8 +26,8 @@ TekUi_Debug.level = TekUi_Debug.ERROR
 
 local CreateApplication =
   function(Me, Config)
-    local is_virtual_device = Config.IsVirtualDevice
-    local device_file_name = Config.DeviceFileName
+    local is_virtual_device = Config.is_virtual_device
+    local device_file_name = Config.device_file_name
 
     local RawDataProvider = Me.RawDataProvider
 
@@ -37,7 +37,7 @@ local CreateApplication =
       RawDataProvider:Init(
         {
           UseVirtualDevice = is_virtual_device,
-          DeviceFileName = device_file_name,
+          device_file_name = device_file_name,
         }
       )
 

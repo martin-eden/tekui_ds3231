@@ -4,7 +4,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-05-30
 ]]
 
 --[[ Develop
@@ -14,8 +14,8 @@ require('workshop.base')
 
 local Config =
   {
-    DeviceFileName = arg[1],
-    IsVirtualDevice = (arg[1] == '--virtual'),
+    device_file_name = arg[1],
+    is_virtual_device = (arg[1] == '--virtual'),
   }
 
 -- Imports:
@@ -72,8 +72,8 @@ end
 local Application =
   Widget:CreateApplication(
     {
-      DeviceFileName = Config.DeviceFileName,
-      IsVirtualDevice = Config.IsVirtualDevice,
+      device_file_name = Config.device_file_name,
+      is_virtual_device = Config.is_virtual_device,
     }
   )
 
