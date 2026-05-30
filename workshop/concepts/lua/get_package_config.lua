@@ -2,40 +2,36 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-08
+  Last mod.: 2026-05-28
 ]]
 
 --[[
   Result structure
 
     (
-      DirsSep [s] -- "/" directories separator
-      ItemsSep [s] -- ";" separator between search paths
-      CaptureChar [s] -- "?" to place module name instead of it
-      ExecDirAlias [s] -- "!" some custom shit for executable's dir
-      ItemTerminator [s] -- "-" terminator at which name is truncated
+      [s] dirs_sep -- "/" directories separator
+      [s] items_sep -- ";" separator between search paths
+      [s] capture_char -- "?" to place module name instead of it
+      [s] exec_dir_alias -- "!" some custom shit for executable's dir
+      [s] name_terminator -- "-" terminator at which name is truncated
     )
 ]]
 
 -- Imports:
-local Lines = request('!.concepts.Lines.Interface')
+local lines_from_str = request('!.convert.lines_from_str')
 
 local parse_package_config =
   function(config_str)
-    local Lines = new(Lines)
+    local Lines = lines_from_str(config_str)
 
-    Lines:FromString(config_str)
-
-    local Result =
+    return
       {
-        DirsSep = Lines:GetLineAt(1),
-        ItemsSep = Lines:GetLineAt(2),
-        CaptureChar = Lines:GetLineAt(3),
-        ExecDirAlias = Lines:GetLineAt(4),
-        ItemTerminator = Lines:GetLineAt(5),
+        dirs_sep = Lines[1],
+        items_sep = Lines[2],
+        capture_char = Lines[3],
+        exec_dir_alias = Lines[4],
+        name_terminator = Lines[5],
       }
-
-    return Result
   end
 
 local get_package_config =
@@ -48,4 +44,5 @@ return get_package_config
 
 --[[
   2026-05-08
+  2026-05-28
 ]]

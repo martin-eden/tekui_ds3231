@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-18
+  Last mod.: 2026-05-30
 ]]
 
 --[[
@@ -23,7 +23,7 @@
 ]]
 
 -- Imports:
-local Ds3231_Codec = request('!.concepts.codec_ds3231.Interface')
+local Ds3231_Codec = request('!.concepts.Codec_Ds3231.Interface')
 
 local RawDataProvider = request('Internals.RawDataProvider.Interface')
 
