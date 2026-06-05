@@ -4,11 +4,11 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-30
+  Last mod.: 2026-06-06
 ]]
 
 --[[ Develop
-package.path = package.path .. ';../../?.lua'
+package.path = package.path .. ';../../../?.lua'
 --]]
 require('workshop.base')
 
@@ -17,13 +17,6 @@ local Config =
     device_file_name = arg[1],
     is_virtual_device = (arg[1] == '--virtual'),
   }
-
--- Imports:
-local Widget = request('Widget.Interface')
---[[ Debug
-_G.t2s = request('!.convert.table_to_str')
--- _G.t2s = request('!.concepts.lua_table_code.save')
---]]
 
 local requires_tekui_msg = [[
 This tool requires TekUI GUI framework
@@ -68,6 +61,13 @@ if not arg[1] then
 
   return
 end
+
+-- Imports:
+local Widget = request('Widget.Interface')
+--[[ Debug
+_G.t2s = request('!.convert.table_to_str')
+-- _G.t2s = request('!.concepts.lua_table_code.save')
+--]]
 
 local Application =
   Widget:CreateApplication(
