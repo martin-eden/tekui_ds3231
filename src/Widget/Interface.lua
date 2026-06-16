@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-30
+  Last mod.: 2026-06-16
 ]]
 
 --[[
@@ -11,7 +11,6 @@
     CreateApplication [f] -- create TekUI application
 
     RawDataProvider [t] -- raw data provider
-    Ds3231_Codec [t] -- codec for raw data
     TekUi_App [t] -- TekUI Application instance
 
     Data [t] -- data in out custom format
@@ -23,8 +22,6 @@
 ]]
 
 -- Imports:
-local Ds3231_Codec = request('!.concepts.Codec_Ds3231.Interface')
-
 local RawDataProvider = request('Internals.RawDataProvider.Interface')
 
 -- Export:
@@ -35,7 +32,6 @@ return
 
     -- Internals:
     RawDataProvider = RawDataProvider,
-    Ds3231_Codec = Ds3231_Codec,
     TekUi_App = { },
     Data = { },
     Tickers = { },
@@ -54,9 +50,7 @@ return
 --[[
   2019 #
   2020 # # #
-  2026-04-27
-  2026-04-28
-  2026-05-09
-  2026-05-12
-  2026-05-15
+  2026-04 # #
+  2026-05 # # #
+  2026-06-16
 ]]

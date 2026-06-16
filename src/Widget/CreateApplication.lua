@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-30
+  Last mod.: 2026-06-16
 ]]
 
 --[[
@@ -14,13 +14,15 @@
     )
 ]]
 
+-- ( Imports
 local TekUi = require('tek.ui')
 local TekUi_Debug = require 'tek.lib.debug'
 
-local normalize_file_name = request('!.file_system.file.normalize_name')
+local normalize_file_name = request('!.concepts.path_name.normalize')
 local create_window = request('!.frontend.tekui.create_window')
 
 local special_checkbox_coloring = request('Internals.special_checkbox_coloring')
+-- )
 
 TekUi_Debug.level = TekUi_Debug.ERROR
 

@@ -4,7 +4,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-06
+  Last mod.: 2026-06-16
 ]]
 
 --[[ Develop
@@ -45,6 +45,13 @@ if not has_tekui() then
   return
 end
 
+-- Imports:
+local Widget = request('Widget.Interface')
+--[[ Debug
+_G.t2s = request('!.convert.table_to_str')
+-- _G.t2s = request('!.concepts.lua_table_code.save')
+--]]
+
 local usage_msg = [[
 GUI to display and edit data of hardware clock module DS331
 
@@ -61,13 +68,6 @@ if not arg[1] then
 
   return
 end
-
--- Imports:
-local Widget = request('Widget.Interface')
---[[ Debug
-_G.t2s = request('!.convert.table_to_str')
--- _G.t2s = request('!.concepts.lua_table_code.save')
---]]
 
 local Application =
   Widget:CreateApplication(
