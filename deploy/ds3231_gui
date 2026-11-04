@@ -1,0 +1,6123 @@
+#!/usr/local/bin/lua
+
+package.preload['run'] =
+  function(...)
+    require('workshop.base')
+    local requires_tekui_msg =
+      [[
+This tool requires TekUI GUI framework
+
+TekUI site:
+
+  http://tekui.neoscientists.org/
+
+TekUI package:
+
+  http://tekui.neoscientists.org/releases/tekui-1.12-r1.tgz
+
+My notes how to install:
+
+  https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
+]]
+    local has_tekui =
+      function()
+        return (pcall(require, 'tek.ui'))
+      end
+    if not has_tekui() then
+      io.stdout:write(requires_tekui_msg)
+      return
+    end
+    local Widget = request('Widget.Interface')
+    local usage_msg =
+      [[
+GUI to display and edit data of hardware clock module DS331
+
+Usage:
+
+  <DevicePath>
+       ┬
+       └── "/dev/ttyUSB<N>" -- use device at that port
+
+-- Martin, 2026-11
+]]
+    if not arg[1] then
+      io.stdout:write(usage_msg)
+      return
+    end
+    local Application = Widget:CreateApplication(arg[1])
+    if not Application then
+      print('Failed to initialize application')
+      return
+    end
+    Application:run()
+  end
+package.preload['Widget.CreateApplication'] =
+  function(...)
+    local TekUi = require('tek.ui')
+    do
+      local TekUi_Debug = require('tek.lib.debug')
+      TekUi_Debug.level = TekUi_Debug.ERROR
+    end
+    local normalize_file_name =
+      request('!.concepts.path_name.normalize')
+    local create_window = request('!.frontend.tekui.create_window')
+    local special_checkbox_coloring =
+      request('Internals.special_checkbox_coloring')
+    return
+      function(Me, device_file_name)
+        local RawDataProvider = Me.RawDataProvider
+        device_file_name = normalize_file_name(device_file_name)
+        local init_done = RawDataProvider:Init(device_file_name)
+        if not init_done then
+          print('Failed to initialize device')
+          return
+        end
+        local Content = Me:CreateContent()
+        local title = string.format('DS3231 on %s', device_file_name)
+        local Tickers = Me:CreateTickers()
+        local WindowOverrides =
+          {
+            show =
+              function(TekUi_Window, drawable)
+                TekUi.Window.show(TekUi_Window, drawable)
+                for idx, handler in ipairs(Tickers) do
+                  TekUi_Window:addInputHandler(
+                    TekUi.MSG_INTERVAL, Me, handler
+                  )
+                end
+              end,
+            hide =
+              function(TekUi_Window)
+                for idx, handler in ipairs(Tickers) do
+                  TekUi_Window:remInputHandler(
+                    TekUi.MSG_INTERVAL, Me, handler
+                  )
+                end
+                TekUi.Window.hide(TekUi_Window)
+              end,
+          }
+        local MainWindow =
+          create_window(title, WindowOverrides, Content)
+        TekUi.Application.connect(MainWindow)
+        local Application =
+          TekUi.Application:new(
+            { AuthorStyles = special_checkbox_coloring }
+          )
+        Application:addMember(MainWindow)
+        Me.TekUi_App = Application
+        Me:DataFromRaw()
+        Me:DataToUi()
+        MainWindow:show()
+        return Application
+      end
+  end
+package.preload['Widget.DataFromRaw'] =
+  function(...)
+    local bytes_to_str = request('!.convert.bytes_to_str')
+    local parse_raw_data = request('!.concepts.codec_ds3231.parse')
+    local data_from_rtc = request('Internals.convert.data_from_rtc')
+    local DataFromRaw =
+      function(Me)
+        local RawData = Me.RawDataProvider:Load()
+        if (#RawData == 0) then
+          return
+        end
+        local RtcRec = parse_raw_data(bytes_to_str(RawData))
+        Me.Data = data_from_rtc(RtcRec)
+      end
+    return DataFromRaw
+  end
+package.preload['Widget.DataFromUi'] =
+  function(...)
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local get_moment = request('Internals.convert.moment_page_to_data')
+    local get_alarm_1 =
+      request('Internals.convert.alarm_1_page_to_data')
+    local get_alarm_2 =
+      request('Internals.convert.alarm_2_page_to_data')
+    local get_core = request('Internals.convert.core_page_to_data')
+    local DataFromUi =
+      function(Me)
+        local TekUi_App = Me.TekUi_App
+        local UiData =
+          {
+            Moment = get_moment(TekUi_App),
+            Alarm_1 = get_alarm_1(TekUi_App),
+            Alarm_2 = get_alarm_2(TekUi_App),
+            Core = get_core(TekUi_App),
+          }
+        merge_and_patch(Me.Data, UiData)
+      end
+    return DataFromUi
+  end
+package.preload['Widget.DataToRaw'] =
+  function(...)
+    local data_to_rtc = request('Internals.convert.data_to_rtc')
+    local compile_raw_data = request('!.concepts.codec_ds3231.compile')
+    local bytes_from_str = request('!.convert.bytes_from_str')
+    local DataToRaw =
+      function(Me)
+        local RtcRec = data_to_rtc(Me.Data)
+        local data_str = compile_raw_data(RtcRec)
+        Me.RawDataProvider:Save(bytes_from_str(data_str))
+      end
+    return DataToRaw
+  end
+package.preload['Widget.DataToUi'] =
+  function(...)
+    local set_moment =
+      request('Internals.convert.moment_page_from_data')
+    local set_alarm_1 =
+      request('Internals.convert.alarm_1_page_from_data')
+    local set_alarm_2 =
+      request('Internals.convert.alarm_2_page_from_data')
+    local set_core = request('Internals.convert.core_page_from_data')
+    local DataToUi =
+      function(Me)
+        local TekUi_App = Me.TekUi_App
+        local OurData = Me.Data
+        _G.IsLoadingRawValues = true
+        set_moment(TekUi_App, OurData.Moment)
+        set_alarm_1(TekUi_App, OurData.Alarm_1)
+        set_alarm_2(TekUi_App, OurData.Alarm_2)
+        set_core(TekUi_App, OurData.Core)
+        _G.IsLoadingRawValues = false
+        Me:UpdatePresentations(TekUi_App)
+      end
+    return DataToUi
+  end
+package.preload['Widget.Interface'] =
+  function(...)
+    local RawDataProvider = request('Internals.RawDataProvider')
+    return
+      {
+        CreateApplication = request('CreateApplication'),
+        RawDataProvider = RawDataProvider,
+        TekUi_App = { },
+        Data = { },
+        Tickers = { },
+        ui_width = 400,
+        DataFromRaw = request('DataFromRaw'),
+        DataToUi = request('DataToUi'),
+        DataFromUi = request('DataFromUi'),
+        DataToRaw = request('DataToRaw'),
+        CreateContent = request('Internals.CreateContent'),
+        UpdatePresentations = request('Internals.UpdatePresentations'),
+        CreateTickers = request('Internals.CreateTickers'),
+      }
+  end
+package.preload['Widget.Internals.CreateContent'] =
+  function(...)
+    local create_moment_block =
+      request('CreateContent.create_moment_block')
+    local create_alarm_1_block =
+      request('CreateContent.create_alarm_1_block')
+    local create_alarm_2_block =
+      request('CreateContent.create_alarm_2_block')
+    local create_core_block = request('CreateContent.create_core_block')
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_button =
+      request('CreateContent.wrappers.create_button')
+    local create_text_label =
+      request('CreateContent.wrappers.create_text_label')
+    local TekUi = require('tek.ui')
+    local presentation_text_style = 'font: /b; color: #0049B7'
+    local create_moment_presentation_block =
+      function()
+        return
+          create_text_label(
+            {
+              name = 'moment_presentation',
+              Overrides =
+                { Style = presentation_text_style, Width = 400 },
+            }
+          )
+      end
+    local create_alarm_1_presentation_block =
+      function()
+        return
+          create_text_label(
+            {
+              name = 'alarm_1_presentation',
+              Overrides = { Style = presentation_text_style },
+            }
+          )
+      end
+    local create_alarm_2_presentation_block =
+      function()
+        return
+          create_text_label(
+            {
+              name = 'alarm_2_presentation',
+              Overrides = { Style = presentation_text_style },
+            }
+          )
+      end
+    local create_core_presentation_block =
+      function()
+        return
+          create_text_label(
+            {
+              name = 'core_presentation',
+              Overrides = { Style = presentation_text_style },
+            }
+          )
+      end
+    local UiPages =
+      {
+        ['Moment'] =
+          {
+            button_name = 'load_moment',
+            is_loaded = false,
+            Content = { },
+          },
+        ['Alarm_1'] =
+          {
+            button_name = 'load_alarm_1',
+            is_loaded = false,
+            Content = { },
+          },
+        ['Alarm_2'] =
+          {
+            button_name = 'load_alarm_2',
+            is_loaded = false,
+            Content = { },
+          },
+        ['Core'] =
+          {
+            button_name = 'load_core',
+            is_loaded = false,
+            Content = { },
+          },
+        last_page_name = 'Moment',
+      }
+    local empty_details_content =
+      function(Me)
+        local DetailsPane = Me.TekUi_App:getById('details_pane')
+        local Children = DetailsPane:getChildren()
+        for _ = 1, #Children do
+          DetailsPane:remMember(Children[1])
+        end
+      end
+    local set_details_content =
+      function(Me, Content)
+        local DetailsPane = Me.TekUi_App:getById('details_pane')
+        DetailsPane:addMember(Content)
+      end
+    local update_page_button_text =
+      function(Me, page_name)
+        local Page = UiPages[page_name]
+        if is_nil(Page) then
+          return
+        end
+        local button_name = Page.button_name
+        local page_is_loaded = Page.is_loaded
+        local DetailsButton = Me.TekUi_App:getById(button_name)
+        if page_is_loaded then
+          DetailsButton:setValue('Text', '<')
+          DetailsButton:setValue('Style', 'font: ui-main/b')
+        else
+          DetailsButton:setValue('Text', '>')
+          DetailsButton:setValue('Style', 'font: ui-main')
+        end
+      end
+    local set_details_page =
+      function(Me, page_name)
+        local last_page_name = UiPages.last_page_name
+        local LastPage = UiPages[last_page_name]
+        local last_page_is_loaded = LastPage.is_loaded
+        local Page = UiPages[page_name]
+        local page_is_loaded = Page.is_loaded
+        if last_page_is_loaded then
+          empty_details_content(Me)
+          LastPage.is_loaded = false
+          update_page_button_text(Me, last_page_name)
+        end
+        if not page_is_loaded then
+          set_details_content(Me, Page.Content)
+          Page.is_loaded = true
+          update_page_button_text(Me, page_name)
+        end
+        UiPages.last_page_name = page_name
+        Me:DataToUi()
+      end
+    local Load_Moment_Btn =
+      {
+        name = UiPages.Moment.button_name,
+        text = '>',
+        handler =
+          function(Me)
+            set_details_page(Me, 'Moment')
+          end,
+      }
+    local Load_Alarm_1_Btn =
+      {
+        name = UiPages.Alarm_1.button_name,
+        text = '>',
+        handler =
+          function(Me)
+            set_details_page(Me, 'Alarm_1')
+          end,
+      }
+    local Load_Alarm_2_Btn =
+      {
+        name = UiPages.Alarm_2.button_name,
+        text = '>',
+        handler =
+          function(Me)
+            set_details_page(Me, 'Alarm_2')
+          end,
+      }
+    local Load_Core_Btn =
+      {
+        name = UiPages.Core.button_name,
+        text = '>',
+        handler =
+          function(Me)
+            set_details_page(Me, 'Core')
+          end,
+      }
+    local func_save =
+      function(Me)
+        Me:DataFromRaw()
+        Me:DataFromUi()
+        Me:DataToRaw()
+        Me:DataFromRaw()
+        Me:DataToUi()
+      end
+    local Save_Btn =
+      {
+        text = '^',
+        handler = func_save,
+        Overrides = { Height = 'fill' },
+      }
+    local create_status_control_block =
+      function(Me)
+        return
+          create_hor_group(
+            {
+              Overrides = { Columns = 2 },
+              Contents =
+                {
+                  create_moment_presentation_block(),
+                  create_button(Me, Load_Moment_Btn),
+                  create_alarm_1_presentation_block(),
+                  create_button(Me, Load_Alarm_1_Btn),
+                  create_alarm_2_presentation_block(),
+                  create_button(Me, Load_Alarm_2_Btn),
+                  create_core_presentation_block(),
+                  create_button(Me, Load_Core_Btn),
+                },
+            }
+          )
+      end
+    local create_details_pane =
+      function()
+        return
+          create_ver_group(
+            { Overrides = { Id = 'details_pane' }, Contents = { } }
+          )
+      end
+    local create_content =
+      function(Me)
+        UiPages.Moment.Content = create_moment_block(Me)
+        UiPages.Alarm_1.Content = create_alarm_1_block(Me)
+        UiPages.Alarm_2.Content = create_alarm_2_block(Me)
+        UiPages.Core.Content = create_core_block(Me)
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_status_control_block(Me),
+                  create_details_pane(),
+                  create_button(Me, Save_Btn),
+                },
+            }
+          )
+      end
+    return create_content
+  end
+package.preload['Widget.Internals.CreateTickers'] =
+  function(...)
+    local create_ticker =
+      function(handler, HandlerData, period)
+        local num_calls_before_update = period
+        local num_calls_done = num_calls_before_update
+        return
+          function(TekUi_Window, msg)
+            if (num_calls_done == num_calls_before_update) then
+              handler(HandlerData)
+              num_calls_done = 0
+            end
+            num_calls_done = num_calls_done + 1
+            return msg
+          end
+      end
+    local CreateTickers =
+      function(Me)
+        local load_data_from_device =
+          create_ticker(Me.DataFromRaw, Me, 210)
+        local update_representations =
+          create_ticker(Me.UpdatePresentations, Me, 30)
+        return { load_data_from_device, update_representations }
+      end
+    return CreateTickers
+  end
+package.preload['Widget.Internals.RawDataProvider'] =
+  function(...)
+    local device_id = 104
+    local data_size = 19
+    local init
+    do
+      local TeletypeClass = request('!.concepts.StreamIo.Teletype')
+      local FirmataCompiler =
+        request('!.concepts.firmata.compiler.interface')
+      local StringStreamClass =
+        request('!.mechs.streams.mergeable.string.interface')
+      local FirmataParser =
+        request('!.concepts.firmata.parser.interface')
+      init =
+        function(Me, device_file_name)
+          local speed_bps = 57600
+          Me[1] = TeletypeClass.create(device_file_name)
+          local is_ok = Me[1]:Open(speed_bps)
+          if not is_ok then
+            return
+          end
+          Me[2] = new(FirmataCompiler)
+          Me[2].output = Me[1][4]
+          Me[3] = new(StringStreamClass)
+          Me[4] = new(FirmataParser)
+          Me[4].stream = Me[3]
+          Me[2].request.i2c_config(Me[2])
+          return true
+        end
+    end
+    local load
+    do
+      local read_chunk_size = 200
+      load =
+        function(Me)
+          Me[2].request.i2c_read(Me[2], device_id, 0, data_size)
+          local data_str = Me[1].Input:Read(read_chunk_size)
+          if (data_str == '') then
+            return { }
+          end
+          Me[3]:init(data_str)
+          local Records, status = Me[4]:parse()
+          for _, Rec in ipairs(Records) do
+            if
+              (Rec.type == 'i2c_reply') and (Rec.device_id == device_id)
+            then
+              return Rec.data
+            end
+          end
+          return { }
+        end
+    end
+    local save
+    do
+      local tbl_unpack = table.unpack
+      save =
+        function(Me, RawData)
+          Me[2].request.i2c_write(
+            Me[2], device_id, 0, tbl_unpack(RawData)
+          )
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function()
+          local Me = { }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Init = init, Load = load, Save = save }
+    return Interface
+  end
+package.preload['Widget.Internals.UpdatePresentations'] =
+  function(...)
+    local represent_moment = request('representers.represent_moment')
+    local represent_alarm = request('representers.represent_alarm')
+    local represent_core = request('representers.represent_core')
+    local UpdatePresentations =
+      function(Me)
+        Me:DataFromUi()
+        local OurData = Me.Data
+        local TekUi_App = Me.TekUi_App
+        local run_representer =
+          function(elem_id, presenter, DataRec)
+            local is_ok, result = pcall(presenter, DataRec)
+            if not is_ok then
+              result = "Can't represent"
+            end
+            TekUi_App:getById(elem_id):setValue('Text', result)
+          end
+        run_representer(
+          'moment_presentation', represent_moment, OurData.Moment
+        )
+        run_representer(
+          'alarm_1_presentation', represent_alarm, OurData.Alarm_1
+        )
+        run_representer(
+          'alarm_2_presentation', represent_alarm, OurData.Alarm_2
+        )
+        run_representer(
+          'core_presentation', represent_core, OurData.Core
+        )
+      end
+    return UpdatePresentations
+  end
+package.preload['Widget.Internals.special_checkbox_coloring'] =
+  function(...)
+    return
+      [[
+#is_busy { color: #0049B7; }
+#is_busy:focus { color: #0049B7; }
+#is_busy:hover { color: #0049B7; }
+#is_busy:active { color: #0049B7; }
+
+#alarm_1_occurred { color: #008080; }
+#alarm_1_occurred:focus { color: #008080; }
+#alarm_1_occurred:hover { color: #008080; }
+#alarm_1_occurred:active { color: #008080; }
+
+#alarm_2_occurred { color: #008080; }
+#alarm_2_occurred:focus { color: #008080; }
+#alarm_2_occurred:hover { color: #008080; }
+#alarm_2_occurred:active { color: #008080; }
+
+#time_is_spoiled { color: #008080; }
+#time_is_spoiled:focus { color: #008080; }
+#time_is_spoiled:hover { color: #008080; }
+#time_is_spoiled:active { color: #008080; }
+]]
+  end
+package.preload['Widget.Internals.CreateContent.create_alarm_1_block'] =
+  function(...)
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_input_box =
+      request('!.frontend.tekui.create_input_box')
+    local create_checkbox = request('wrappers.create_checkbox')
+    local create_choice_item = request('wrappers.create_choice_item')
+    local spawn_correct_alarm_flags =
+      request('spawn_correct_alarm_flags')
+    local correct_flags_any =
+      spawn_correct_alarm_flags(
+        {
+          'alarm_1_dateday_any',
+          'alarm_1_hour_any',
+          'alarm_1_minute_any',
+          'alarm_1_second_any',
+          NextOffset = -1,
+        }
+      )
+    local correct_flags_spec =
+      spawn_correct_alarm_flags(
+        {
+          'alarm_1_dateday_spec',
+          'alarm_1_hour_spec',
+          'alarm_1_minute_spec',
+          'alarm_1_second_spec',
+          NextOffset = 1,
+        }
+      )
+    local create_any_rb =
+      function(elem_id)
+        return
+          create_choice_item(
+            elem_id, 'any', { onSelect = correct_flags_any }
+          )
+      end
+    local create_spec_rb =
+      function(elem_id)
+        return
+          create_choice_item(
+            elem_id, 'specific', { onSelect = correct_flags_spec }
+          )
+      end
+    local create_day_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'day',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_1_dateday_any'),
+                  create_spec_rb('alarm_1_dateday_spec'),
+                  create_input_box('alarm_1_dateday'),
+                },
+            }
+          )
+      end
+    local create_hour_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'hour',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_1_hour_any'),
+                  create_spec_rb('alarm_1_hour_spec'),
+                  create_input_box('alarm_1_hour'),
+                },
+            }
+          )
+      end
+    local create_minute_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'minute',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_1_minute_any'),
+                  create_spec_rb('alarm_1_minute_spec'),
+                  create_input_box('alarm_1_minute'),
+                },
+            }
+          )
+      end
+    local create_second_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'second',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_1_second_any'),
+                  create_spec_rb('alarm_1_second_spec'),
+                  create_input_box('alarm_1_second'),
+                },
+            }
+          )
+      end
+    local create_alarm_inputs_block =
+      function()
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_day_select_block(),
+                  create_hour_select_block(),
+                  create_minute_select_block(),
+                  create_second_select_block(),
+                },
+            }
+          )
+      end
+    local create_alarm_1_block =
+      function(Me)
+        return
+          create_ver_group(
+            {
+              Overrides = { Width = Me.ui_width },
+              Contents =
+                {
+                  create_checkbox('alarm_1_occurred', 'occurred'),
+                  create_checkbox('alarm_1_enabled', 'enable output'),
+                  create_alarm_inputs_block(),
+                  create_checkbox('alarm_1_is_day', 'is day of week'),
+                  create_checkbox(
+                    'alarm_1_store_hour_in_12h', 'AM/PM hour format'
+                  ),
+                },
+            }
+          )
+      end
+    return create_alarm_1_block
+  end
+package.preload['Widget.Internals.CreateContent.create_alarm_2_block'] =
+  function(...)
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_input_box =
+      request('!.frontend.tekui.create_input_box')
+    local create_checkbox = request('wrappers.create_checkbox')
+    local create_choice_item = request('wrappers.create_choice_item')
+    local spawn_correct_alarm_flags =
+      request('spawn_correct_alarm_flags')
+    local correct_flags_any =
+      spawn_correct_alarm_flags(
+        {
+          'alarm_2_dateday_any',
+          'alarm_2_hour_any',
+          'alarm_2_minute_any',
+          NextOffset = -1,
+        }
+      )
+    local correct_flags_spec =
+      spawn_correct_alarm_flags(
+        {
+          'alarm_2_dateday_spec',
+          'alarm_2_hour_spec',
+          'alarm_2_minute_spec',
+          NextOffset = 1,
+        }
+      )
+    local create_any_rb =
+      function(elem_id)
+        return
+          create_choice_item(
+            elem_id, 'any', { onSelect = correct_flags_any }
+          )
+      end
+    local create_spec_rb =
+      function(elem_id)
+        return
+          create_choice_item(
+            elem_id, 'specific', { onSelect = correct_flags_spec }
+          )
+      end
+    local create_day_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'day',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_2_dateday_any'),
+                  create_spec_rb('alarm_2_dateday_spec'),
+                  create_input_box('alarm_2_dateday'),
+                },
+            }
+          )
+      end
+    local create_hour_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'hour',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_2_hour_any'),
+                  create_spec_rb('alarm_2_hour_spec'),
+                  create_input_box('alarm_2_hour'),
+                },
+            }
+          )
+      end
+    local create_minute_select_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'minute',
+              Overrides = { Width = 'free' },
+              Contents =
+                {
+                  create_any_rb('alarm_2_minute_any'),
+                  create_spec_rb('alarm_2_minute_spec'),
+                  create_input_box('alarm_2_minute'),
+                },
+            }
+          )
+      end
+    local create_alarm_inputs_block =
+      function()
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_day_select_block(),
+                  create_hour_select_block(),
+                  create_minute_select_block(),
+                },
+            }
+          )
+      end
+    local create_alarm_2_block =
+      function(Me)
+        return
+          create_ver_group(
+            {
+              Overrides = { Width = Me.ui_width },
+              Contents =
+                {
+                  create_checkbox('alarm_2_occurred', 'occurred'),
+                  create_checkbox('alarm_2_enabled', 'enable output'),
+                  create_alarm_inputs_block(),
+                  create_checkbox('alarm_2_is_day', 'is day of week'),
+                  create_checkbox(
+                    'alarm_2_store_hour_in_12h', 'AM/PM hour format'
+                  ),
+                },
+            }
+          )
+      end
+    return create_alarm_2_block
+  end
+package.preload['Widget.Internals.CreateContent.create_core_block'] =
+  function(...)
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_annotated_hor_input =
+      request('wrappers.create_annotated_hor_input')
+    local create_checkbox = request('wrappers.create_checkbox')
+    local create_choice_item = request('wrappers.create_choice_item')
+    local create_freq_selector_block =
+      function()
+        return
+          create_hor_group(
+            {
+              caption = 'wave',
+              Contents =
+                {
+                  create_choice_item('wave_freq_num_0', '1 Hz'),
+                  create_choice_item('wave_freq_num_1', '1 KiHz'),
+                  create_choice_item('wave_freq_num_2', '4 KiHz'),
+                  create_choice_item('wave_freq_num_3', '8 KiHz'),
+                },
+            }
+          )
+      end
+    local create_square_wave_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'output pin',
+              Contents =
+                {
+                  create_freq_selector_block(),
+                  create_checkbox(
+                    'output_is_from_alarms', 'output ALARMS, not wave'
+                  ),
+                },
+            }
+          )
+      end
+    local create_battery_mode_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'at battery',
+              Contents =
+                {
+                  create_checkbox(
+                    'atbattery_clock_disabled', 'stop clock'
+                  ),
+                  create_checkbox(
+                    'atbattery_enable_wave', 'enable wave output'
+                  ),
+                },
+            }
+          )
+      end
+    local create_temperature_block =
+      function()
+        return
+          create_hor_group(
+            {
+              caption = 'temperature',
+              Contents =
+                {
+                  create_annotated_hor_input(
+                    'temperature', 50, 'temperature'
+                  ),
+                  create_checkbox('get_temperature', 'get temperature'),
+                },
+            }
+          )
+      end
+    local create_output_pins_block =
+      function()
+        return
+          create_ver_group(
+            {
+              caption = 'output',
+              Contents =
+                {
+                  create_checkbox(
+                    'enable_wave_32k', 'Enable 32 KiHz pin'
+                  ),
+                  create_square_wave_block(),
+                },
+            }
+          )
+      end
+    local create_core_block =
+      function(Me)
+        return
+          create_ver_group(
+            {
+              Overrides = { Width = Me.ui_width },
+              Contents =
+                {
+                  create_checkbox('is_busy', 'is busy'),
+                  create_checkbox(
+                    'time_is_spoiled', 'clock was stopped'
+                  ),
+                  create_annotated_hor_input(
+                    'speed_trim', 40, 'clock speed trimming'
+                  ),
+                  create_output_pins_block(),
+                  create_battery_mode_block(),
+                  create_temperature_block(),
+                },
+            }
+          )
+      end
+    return create_core_block
+  end
+package.preload['Widget.Internals.CreateContent.create_moment_block'] =
+  function(...)
+    local func_set_cur_time = request('^.funcs.set_cur_time')
+    local func_set_end_of_day = request('^.funcs.set_end_of_day')
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_annotated_ver_input =
+      request('wrappers.create_annotated_ver_input')
+    local create_input_box =
+      request('!.frontend.tekui.create_input_box')
+    local create_checkbox = request('wrappers.create_checkbox')
+    local create_button = request('wrappers.create_button')
+    local SetCurTime_Btn =
+      { text = 'Set _current time', handler = func_set_cur_time }
+    local SetEndOfDay_Btn =
+      { text = 'Set _end of day', handler = func_set_end_of_day }
+    local create_moment_inputs_block =
+      function()
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_annotated_ver_input('moment_year', 'year'),
+                  create_annotated_ver_input('moment_month', 'month'),
+                  create_annotated_ver_input('moment_date', 'date'),
+                  create_annotated_ver_input('moment_day', 'day'),
+                  create_annotated_ver_input('moment_hour', 'hour'),
+                  create_annotated_ver_input('moment_minute', 'minute'),
+                  create_annotated_ver_input('moment_second', 'second'),
+                },
+            }
+          )
+      end
+    local create_buttons_block =
+      function(Me)
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_button(Me, SetCurTime_Btn),
+                  create_button(Me, SetEndOfDay_Btn),
+                },
+            }
+          )
+      end
+    local create_moment_block =
+      function(Me)
+        return
+          create_ver_group(
+            {
+              Overrides = { Width = Me.ui_width },
+              Contents =
+                {
+                  create_moment_inputs_block(),
+                  create_checkbox(
+                    'moment_is_next_century', 'Is next century'
+                  ),
+                  create_checkbox(
+                    'moment_store_hour_in_12h', 'AM/PM hour format'
+                  ),
+                  create_buttons_block(Me),
+                },
+            }
+          )
+      end
+    return create_moment_block
+  end
+package.preload[
+  'Widget.Internals.CreateContent.spawn_correct_alarm_flags'
+] =
+  function(...)
+    local TekUi = require('tek.ui')
+    local adjust_alarms =
+      function(Checkboxes)
+        assert_table(Checkboxes)
+        assert_integer(Checkboxes.NextOffset)
+        return
+          function(TuiElem)
+            TekUi.RadioButton.onSelect(TuiElem)
+            if _G.IsLoadingRawValues then
+              return
+            end
+            if not TuiElem.Selected then
+              return
+            end
+            local our_id = TuiElem.Id
+            local our_index
+            for i = 1, #Checkboxes do
+              if (Checkboxes[i] == our_id) then
+                our_index = i
+                break
+              end
+            end
+            assert(our_index)
+            local next_index = our_index + Checkboxes.NextOffset
+            local next_id = Checkboxes[next_index]
+            if not next_id then
+              return
+            end
+            TuiElem:getById(next_id):setValue('Selected', true)
+          end
+      end
+    return adjust_alarms
+  end
+package.preload[
+  'Widget.Internals.CreateContent.wrappers.create_annotated_hor_input'
+] =
+  function(...)
+    local create_hor_group =
+      request('!.frontend.tekui.create_hor_group')
+    local create_input_box =
+      request('!.frontend.tekui.create_input_box')
+    local create_text_label = request('create_text_label')
+    local create_annotated_hor_input =
+      function(name, width, description)
+        return
+          create_hor_group(
+            {
+              Contents =
+                {
+                  create_input_box(name, { Width = width }),
+                  create_text_label(
+                    {
+                      text = description,
+                      Overrides = { Style = 'text-align: left' },
+                    }
+                  ),
+                },
+            }
+          )
+      end
+    return create_annotated_hor_input
+  end
+package.preload[
+  'Widget.Internals.CreateContent.wrappers.create_annotated_ver_input'
+] =
+  function(...)
+    local create_ver_group =
+      request('!.frontend.tekui.create_ver_group')
+    local create_input_box =
+      request('!.frontend.tekui.create_input_box')
+    local create_annotated_ver_input =
+      function(name, description)
+        return
+          create_ver_group(
+            {
+              caption = description,
+              Overrides = { Width = 'free' },
+              Contents = { create_input_box(name) },
+            }
+          )
+      end
+    return create_annotated_ver_input
+  end
+package.preload['Widget.Internals.CreateContent.wrappers.create_button'] =
+  function(...)
+    local ws_create_button = request('!.frontend.tekui.button')
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local create_button =
+      function(Me, Button, Overrides)
+        local name = Button.name
+        local caption = Button.text
+        local handler = Button.handler
+        assert_string(caption)
+        assert_function(handler)
+        local tekui_button_handler =
+          function()
+            handler(Me)
+          end
+        local ButtonOverrides =
+          { Id = name, onClick = tekui_button_handler }
+        merge_and_patch(ButtonOverrides, Button.Overrides)
+        return ws_create_button(caption, ButtonOverrides)
+      end
+    return create_button
+  end
+package.preload[
+  'Widget.Internals.CreateContent.wrappers.create_checkbox'
+] =
+  function(...)
+    local ws_create_checkbox = request('!.frontend.tekui.checkbox')
+    local create_checkbox =
+      function(name, description, Overrides)
+        return ws_create_checkbox(description, false, name, Overrides)
+      end
+    return create_checkbox
+  end
+package.preload[
+  'Widget.Internals.CreateContent.wrappers.create_choice_item'
+] =
+  function(...)
+    local ws_create_choice_item =
+      request('!.frontend.tekui.radio_button')
+    local create_choice_item =
+      function(name, description, Overrides)
+        return ws_create_choice_item(description, name, Overrides)
+      end
+    return create_choice_item
+  end
+package.preload[
+  'Widget.Internals.CreateContent.wrappers.create_text_label'
+] =
+  function(...)
+    local ws_create_text_label = request('!.frontend.tekui.text_label')
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local create_text_label =
+      function(Label)
+        local name = Label.name
+        local text = Label.text
+        local Overrides = { Id = name }
+        merge_and_patch(Overrides, Label.Overrides)
+        return ws_create_text_label(text, Overrides)
+      end
+    return create_text_label
+  end
+package.preload['Widget.Internals.convert.alarm_1_page_from_data'] =
+  function(...)
+    local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
+    local ws_set_input_text = request('!.frontend.tekui.set_input_text')
+    local ws_set_radiomark_binary =
+      request('!.frontend.tekui.set_radiomark_binary')
+    local prefix_args = request('!.function.prefix_args')
+    local to_two_digits_str = request('Internals.to_two_digits_str')
+    local element_exists = request('Internals.element_exists')
+    local set_alarm_1_page =
+      function(TekUi_App, Alarm)
+        if not element_exists(TekUi_App, 'alarm_1_enabled') then
+          return
+        end
+        local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
+        local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
+        local set_radiomark_binary =
+          prefix_args(ws_set_radiomark_binary, TekUi_App)
+        set_checkbox('alarm_1_enabled', Alarm.enabled)
+        set_checkbox('alarm_1_occurred', Alarm.occurred)
+        set_input_text(
+          'alarm_1_dateday', to_two_digits_str(Alarm.dateday)
+        )
+        set_checkbox('alarm_1_is_day', Alarm.is_day)
+        set_radiomark_binary(
+          'alarm_1_dateday_spec',
+          'alarm_1_dateday_any',
+          Alarm.ignore_dateday
+        )
+        set_input_text('alarm_1_hour', to_two_digits_str(Alarm.hour))
+        set_checkbox(
+          'alarm_1_store_hour_in_12h', Alarm.store_hour_in_12h
+        )
+        set_radiomark_binary(
+          'alarm_1_hour_spec', 'alarm_1_hour_any', Alarm.ignore_hour
+        )
+        set_input_text(
+          'alarm_1_minute', to_two_digits_str(Alarm.minute)
+        )
+        set_radiomark_binary(
+          'alarm_1_minute_spec',
+          'alarm_1_minute_any',
+          Alarm.ignore_minute
+        )
+        set_input_text(
+          'alarm_1_second', to_two_digits_str(Alarm.second)
+        )
+        set_radiomark_binary(
+          'alarm_1_second_spec',
+          'alarm_1_second_any',
+          Alarm.ignore_second
+        )
+      end
+    return set_alarm_1_page
+  end
+package.preload['Widget.Internals.convert.alarm_1_page_to_data'] =
+  function(...)
+    local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
+    local ws_get_input_number =
+      request('!.frontend.tekui.get_input_number')
+    local prefix_args = request('!.function.prefix_args')
+    local to_two_digits_num = request('Internals.to_two_digits_num')
+    local element_exists = request('Internals.element_exists')
+    local get_alarm_1_page =
+      function(TekUi_App)
+        if not element_exists(TekUi_App, 'alarm_1_enabled') then
+          return { }
+        end
+        local get_checkbox = prefix_args(ws_get_checkbox, TekUi_App)
+        local get_input_number =
+          prefix_args(ws_get_input_number, TekUi_App)
+        return
+          {
+            enabled = get_checkbox('alarm_1_enabled'),
+            occurred = get_checkbox('alarm_1_occurred'),
+            dateday =
+              to_two_digits_num(get_input_number('alarm_1_dateday')),
+            is_day = get_checkbox('alarm_1_is_day'),
+            ignore_dateday = get_checkbox('alarm_1_dateday_any'),
+            hour = to_two_digits_num(get_input_number('alarm_1_hour')),
+            store_hour_in_12h =
+              get_checkbox('alarm_1_store_hour_in_12h'),
+            ignore_hour = get_checkbox('alarm_1_hour_any'),
+            minute =
+              to_two_digits_num(get_input_number('alarm_1_minute')),
+            ignore_minute = get_checkbox('alarm_1_minute_any'),
+            second =
+              to_two_digits_num(get_input_number('alarm_1_second')),
+            ignore_second = get_checkbox('alarm_1_second_any'),
+          }
+      end
+    return get_alarm_1_page
+  end
+package.preload['Widget.Internals.convert.alarm_2_page_from_data'] =
+  function(...)
+    local prefix_args = request('!.function.prefix_args')
+    local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
+    local ws_set_input_text = request('!.frontend.tekui.set_input_text')
+    local ws_set_radiomark_binary =
+      request('!.frontend.tekui.set_radiomark_binary')
+    local to_two_digits_str = request('Internals.to_two_digits_str')
+    local element_exists = request('Internals.element_exists')
+    local set_alarm_2_page =
+      function(TekUi_App, Alarm)
+        if not element_exists(TekUi_App, 'alarm_2_enabled') then
+          return
+        end
+        local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
+        local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
+        local set_radiomark_binary =
+          prefix_args(ws_set_radiomark_binary, TekUi_App)
+        set_checkbox('alarm_2_enabled', Alarm.enabled)
+        set_checkbox('alarm_2_occurred', Alarm.occurred)
+        set_input_text(
+          'alarm_2_dateday', to_two_digits_str(Alarm.dateday)
+        )
+        set_checkbox('alarm_2_is_day', Alarm.is_day)
+        set_radiomark_binary(
+          'alarm_2_dateday_spec',
+          'alarm_2_dateday_any',
+          Alarm.ignore_dateday
+        )
+        set_input_text('alarm_2_hour', to_two_digits_str(Alarm.hour))
+        set_checkbox(
+          'alarm_2_store_hour_in_12h', Alarm.store_hour_in_12h
+        )
+        set_radiomark_binary(
+          'alarm_2_hour_spec', 'alarm_2_hour_any', Alarm.ignore_hour
+        )
+        set_input_text(
+          'alarm_2_minute', to_two_digits_str(Alarm.minute)
+        )
+        set_radiomark_binary(
+          'alarm_2_minute_spec',
+          'alarm_2_minute_any',
+          Alarm.ignore_minute
+        )
+      end
+    return set_alarm_2_page
+  end
+package.preload['Widget.Internals.convert.alarm_2_page_to_data'] =
+  function(...)
+    local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
+    local ws_get_input_number =
+      request('!.frontend.tekui.get_input_number')
+    local prefix_args = request('!.function.prefix_args')
+    local to_two_digits_num = request('Internals.to_two_digits_num')
+    local element_exists = request('Internals.element_exists')
+    local get_alarm_2_page =
+      function(TekUi_App)
+        if not element_exists(TekUi_App, 'alarm_2_enabled') then
+          return { }
+        end
+        local get_checkbox = prefix_args(ws_get_checkbox, TekUi_App)
+        local get_input_number =
+          prefix_args(ws_get_input_number, TekUi_App)
+        return
+          {
+            enabled = get_checkbox('alarm_2_enabled'),
+            occurred = get_checkbox('alarm_2_occurred'),
+            dateday =
+              to_two_digits_num(get_input_number('alarm_2_dateday')),
+            is_day = get_checkbox('alarm_2_is_day'),
+            ignore_dateday = get_checkbox('alarm_2_dateday_any'),
+            hour = to_two_digits_num(get_input_number('alarm_2_hour')),
+            store_hour_in_12h =
+              get_checkbox('alarm_2_store_hour_in_12h'),
+            ignore_hour = get_checkbox('alarm_2_hour_any'),
+            minute =
+              to_two_digits_num(get_input_number('alarm_2_minute')),
+            ignore_minute = get_checkbox('alarm_2_minute_any'),
+          }
+      end
+    return get_alarm_2_page
+  end
+package.preload['Widget.Internals.convert.core_page_from_data'] =
+  function(...)
+    local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
+    local ws_set_radiomark = request('!.frontend.tekui.set_radiomark')
+    local ws_set_input_text = request('!.frontend.tekui.set_input_text')
+    local prefix_args = request('!.function.prefix_args')
+    local element_exists = request('Internals.element_exists')
+    local set_other_settings_page =
+      function(TekUi_App, CoreRec)
+        if not element_exists(TekUi_App, 'is_busy') then
+          return
+        end
+        local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
+        local set_radiomark = prefix_args(ws_set_radiomark, TekUi_App)
+        local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
+        set_checkbox('is_busy', CoreRec.is_busy)
+        set_checkbox('time_is_spoiled', CoreRec.time_is_spoiled)
+        set_checkbox(
+          'atbattery_clock_disabled', CoreRec.atbattery_clock_disabled
+        )
+        set_checkbox(
+          'atbattery_enable_wave', CoreRec.atbattery_enable_wave
+        )
+        set_checkbox(
+          'output_is_from_alarms', CoreRec.output_is_from_alarms
+        )
+        set_checkbox('enable_wave_32k', CoreRec.enable_wave_32k)
+        set_input_text(
+          'temperature', string.format('%.2f', CoreRec.temperature)
+        )
+        set_checkbox('get_temperature', CoreRec.get_temperature)
+        set_input_text('speed_trim', tostring(CoreRec.speed_trim))
+        set_radiomark(
+          'wave_freq_num_' .. tostring(CoreRec.wave_freq_num)
+        )
+      end
+    return set_other_settings_page
+  end
+package.preload['Widget.Internals.convert.core_page_to_data'] =
+  function(...)
+    local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
+    local ws_get_input_number =
+      request('!.frontend.tekui.get_input_number')
+    local prefix_args = request('!.function.prefix_args')
+    local constrain_number = request('!.number.constrain')
+    local element_exists = request('Internals.element_exists')
+    local constrain_temperature =
+      function(temperature)
+        return constrain_number(temperature, -128, 127.75)
+      end
+    local constrain_speed_trim =
+      function(speed_trim)
+        return constrain_number(speed_trim, -128, 127)
+      end
+    local get_other_settings_rec =
+      function(TekUi_App)
+        if not element_exists(TekUi_App, 'is_busy') then
+          return { }
+        end
+        local get_checkbox = prefix_args(ws_get_checkbox, TekUi_App)
+        local get_input_number =
+          prefix_args(ws_get_input_number, TekUi_App)
+        local get_wave_freq_num =
+          function()
+            for idx = 0, 3 do
+              if get_checkbox('wave_freq_num_' .. tostring(idx)) then
+                return idx
+              end
+            end
+            return 0
+          end
+        return
+          {
+            is_busy = get_checkbox('is_busy'),
+            time_is_spoiled = get_checkbox('time_is_spoiled'),
+            atbattery_clock_disabled =
+              get_checkbox('atbattery_clock_disabled'),
+            atbattery_enable_wave =
+              get_checkbox('atbattery_enable_wave'),
+            output_is_from_alarms =
+              get_checkbox('output_is_from_alarms'),
+            enable_wave_32k = get_checkbox('enable_wave_32k'),
+            temperature =
+              constrain_temperature(get_input_number('temperature')),
+            get_temperature = get_checkbox('get_temperature'),
+            speed_trim =
+              constrain_speed_trim(get_input_number('speed_trim')),
+            wave_freq_num = get_wave_freq_num(),
+          }
+      end
+    return get_other_settings_rec
+  end
+package.preload['Widget.Internals.convert.data_from_rtc'] =
+  function(...)
+    local bcd_to_byte = request('!.convert.bcd_to_byte')
+    local get_bit = request('!.number.get_bit')
+    local get_bits = request('!.number.get_bits')
+    local from_ampm_hour = request('!.concepts.daytime.from_ampm_hour')
+    local get_hour =
+      function(hour_data, is_12h_format)
+        if is_12h_format then
+          local is_pm = get_bit(hour_data, 5)
+          local hour_ampm = bcd_to_byte(get_bits(hour_data, 0, 4))
+          return from_ampm_hour(hour_ampm, is_pm)
+        end
+        return bcd_to_byte(hour_data)
+      end
+    local get_temperature =
+      function(TempRec)
+        local int = TempRec.int
+        local frac = TempRec.frac
+        local is_neg = TempRec.is_neg
+        local result
+        result = int + frac / 4
+        if is_neg then
+          result = 128 - result
+          result = -result
+        end
+        return result
+      end
+    local data_from_rtc =
+      function(RtcRec)
+        return
+          {
+            Core =
+              {
+                is_busy = RtcRec.Status.is_busy,
+                time_is_spoiled = RtcRec.Status.time_is_spoiled,
+                atbattery_clock_disabled =
+                  RtcRec.Status.atbattery_clock_disabled,
+                atbattery_enable_wave =
+                  RtcRec.Status.atbattery_enable_wave,
+                output_is_from_alarms =
+                  RtcRec.Status.output_is_from_alarms,
+                enable_wave_32k = RtcRec.Status['32kihz_pin_enabled'],
+                temperature = get_temperature(RtcRec.Status.Temperature),
+                get_temperature = RtcRec.Status.getting_temperature,
+                speed_trim = RtcRec.Status.speed_trim,
+                wave_freq_num = RtcRec.Status.wave_freq_num,
+              },
+            Moment =
+              {
+                year = bcd_to_byte(RtcRec.Moment.year_bcd),
+                is_next_century = RtcRec.Moment.is_next_century,
+                month = bcd_to_byte(RtcRec.Moment.month_bcd),
+                date = bcd_to_byte(RtcRec.Moment.date_bcd),
+                day = bcd_to_byte(RtcRec.Moment.day_bcd),
+                store_hour_in_12h = RtcRec.Moment.hour_is_12h_format,
+                hour =
+                  get_hour(
+                    RtcRec.Moment.hour_data,
+                    RtcRec.Moment.hour_is_12h_format
+                  ),
+                minute = bcd_to_byte(RtcRec.Moment.minute_bcd),
+                second = bcd_to_byte(RtcRec.Moment.second_bcd),
+              },
+            Alarm_1 =
+              {
+                enabled = RtcRec.Status.alarm_1_enabled,
+                occurred = RtcRec.Status.alarm_1_occurred,
+                dateday = bcd_to_byte(RtcRec.Alarm_1.dateday_bcd),
+                is_day = RtcRec.Alarm_1.dateday_is_day,
+                ignore_dateday = RtcRec.Alarm_1.ignore_dateday,
+                store_hour_in_12h = RtcRec.Alarm_1.hour_is_12h_format,
+                hour =
+                  get_hour(
+                    RtcRec.Alarm_1.hour_data,
+                    RtcRec.Alarm_1.hour_is_12h_format
+                  ),
+                ignore_hour = RtcRec.Alarm_1.ignore_hour,
+                minute = bcd_to_byte(RtcRec.Alarm_1.minute_bcd),
+                ignore_minute = RtcRec.Alarm_1.ignore_minute,
+                second = bcd_to_byte(RtcRec.Alarm_1.second_bcd),
+                ignore_second = RtcRec.Alarm_1.ignore_second,
+              },
+            Alarm_2 =
+              {
+                enabled = RtcRec.Status.alarm_2_enabled,
+                occurred = RtcRec.Status.alarm_2_occurred,
+                dateday = bcd_to_byte(RtcRec.Alarm_2.dateday_bcd),
+                is_day = RtcRec.Alarm_2.dateday_is_day,
+                ignore_dateday = RtcRec.Alarm_2.ignore_dateday,
+                store_hour_in_12h = RtcRec.Alarm_1.hour_is_12h_format,
+                hour =
+                  get_hour(
+                    RtcRec.Alarm_2.hour_data,
+                    RtcRec.Alarm_2.hour_is_12h_format
+                  ),
+                ignore_hour = RtcRec.Alarm_2.ignore_hour,
+                minute = bcd_to_byte(RtcRec.Alarm_2.minute_bcd),
+                ignore_minute = RtcRec.Alarm_2.ignore_minute,
+              },
+          }
+      end
+    return data_from_rtc
+  end
+package.preload['Widget.Internals.convert.data_to_rtc'] =
+  function(...)
+    local bcd_from_byte = request('!.convert.bcd_from_byte')
+    local to_ampm_hour = request('!.concepts.daytime.to_ampm_hour')
+    local set_bit = request('!.number.set_bit')
+    local set_bits = request('!.number.set_bits')
+    local get_hour_data_from_hour =
+      function(hour, is_ampm)
+        local hour_data = 0
+        if is_ampm then
+          local hour_ampm, is_pm = to_ampm_hour(hour)
+          hour_data =
+            bcd_from_byte(set_bits(hour_ampm, 0, 4, hour_data))
+          hour_data = set_bit(hour_data, 5, is_pm)
+        else
+          hour_data = bcd_from_byte(hour)
+        end
+        return hour_data
+      end
+    local set_temperature =
+      function(temperature)
+        temperature = math.modf(temperature * 4) / 4
+        local TempRec = { int = 0, frac = 0, is_neg = false }
+        if (temperature < 0) then
+          TempRec.is_neg = true
+          temperature = -temperature
+          temperature = 128 - temperature
+        end
+        local int_part, frac_part = math.modf(temperature)
+        TempRec.int = math.tointeger(int_part)
+        TempRec.frac = math.tointeger(4 * frac_part)
+        return TempRec
+      end
+    local data_to_rtc =
+      function(OurData)
+        return
+          {
+            Status =
+              {
+                alarm_1_enabled = OurData.Alarm_1.enabled,
+                alarm_1_occurred = OurData.Alarm_1.occurred,
+                alarm_2_enabled = OurData.Alarm_2.enabled,
+                alarm_2_occurred = OurData.Alarm_2.occurred,
+                is_busy = OurData.Core.is_busy,
+                time_is_spoiled = OurData.Core.time_is_spoiled,
+                atbattery_clock_disabled =
+                  OurData.Core.atbattery_clock_disabled,
+                atbattery_enable_wave =
+                  OurData.Core.atbattery_enable_wave,
+                output_is_from_alarms =
+                  OurData.Core.output_is_from_alarms,
+                ['32kihz_pin_enabled'] = OurData.Core.enable_wave_32k,
+                Temperature = set_temperature(OurData.Core.temperature),
+                getting_temperature = OurData.Core.get_temperature,
+                speed_trim = OurData.Core.speed_trim,
+                wave_freq_num = OurData.Core.wave_freq_num,
+              },
+            Moment =
+              {
+                year_bcd = bcd_from_byte(OurData.Moment.year),
+                is_next_century = OurData.Moment.is_next_century,
+                month_bcd = bcd_from_byte(OurData.Moment.month),
+                date_bcd = bcd_from_byte(OurData.Moment.date),
+                day_bcd = bcd_from_byte(OurData.Moment.day),
+                hour_is_12h_format = OurData.Moment.store_hour_in_12h,
+                hour_data =
+                  get_hour_data_from_hour(
+                    OurData.Moment.hour,
+                    OurData.Moment.store_hour_in_12h
+                  ),
+                minute_bcd = bcd_from_byte(OurData.Moment.minute),
+                second_bcd = bcd_from_byte(OurData.Moment.second),
+              },
+            Alarm_1 =
+              {
+                dateday_bcd = bcd_from_byte(OurData.Alarm_1.dateday),
+                dateday_is_day = OurData.Alarm_1.is_day,
+                ignore_dateday = OurData.Alarm_1.ignore_dateday,
+                hour_is_12h_format = OurData.Alarm_1.store_hour_in_12h,
+                hour_data =
+                  get_hour_data_from_hour(
+                    OurData.Alarm_1.hour,
+                    OurData.Alarm_1.store_hour_in_12h
+                  ),
+                ignore_hour = OurData.Alarm_1.ignore_hour,
+                minute_bcd = bcd_from_byte(OurData.Alarm_1.minute),
+                ignore_minute = OurData.Alarm_1.ignore_minute,
+                second_bcd = bcd_from_byte(OurData.Alarm_1.second),
+                ignore_second = OurData.Alarm_1.ignore_second,
+              },
+            Alarm_2 =
+              {
+                dateday_bcd = bcd_from_byte(OurData.Alarm_2.dateday),
+                dateday_is_day = OurData.Alarm_2.is_day,
+                ignore_dateday = OurData.Alarm_2.ignore_dateday,
+                hour_is_12h_format = OurData.Alarm_2.store_hour_in_12h,
+                hour_data =
+                  get_hour_data_from_hour(
+                    OurData.Alarm_2.hour,
+                    OurData.Alarm_2.store_hour_in_12h
+                  ),
+                ignore_hour = OurData.Alarm_2.ignore_hour,
+                minute_bcd = bcd_from_byte(OurData.Alarm_2.minute),
+                ignore_minute = OurData.Alarm_2.ignore_minute,
+              },
+          }
+      end
+    return data_to_rtc
+  end
+package.preload['Widget.Internals.convert.moment_page_from_data'] =
+  function(...)
+    local prefix_args = request('!.function.prefix_args')
+    local ws_set_input_text = request('!.frontend.tekui.set_input_text')
+    local ws_set_checkbox = request('!.frontend.tekui.set_checkbox')
+    local to_two_digits_str = request('Internals.to_two_digits_str')
+    local element_exists = request('Internals.element_exists')
+    local set_moment_page =
+      function(TekUi_App, Moment)
+        if not element_exists(TekUi_App, 'moment_year') then
+          return
+        end
+        local set_input_text = prefix_args(ws_set_input_text, TekUi_App)
+        local set_checkbox = prefix_args(ws_set_checkbox, TekUi_App)
+        set_input_text('moment_year', to_two_digits_str(Moment.year))
+        set_checkbox('moment_is_next_century', Moment.is_next_century)
+        set_input_text('moment_month', to_two_digits_str(Moment.month))
+        set_input_text('moment_date', to_two_digits_str(Moment.date))
+        set_input_text('moment_day', tostring(Moment.day))
+        set_input_text('moment_hour', to_two_digits_str(Moment.hour))
+        set_checkbox(
+          'moment_store_hour_in_12h', Moment.store_hour_in_12h
+        )
+        set_input_text(
+          'moment_minute', to_two_digits_str(Moment.minute)
+        )
+        set_input_text(
+          'moment_second', to_two_digits_str(Moment.second)
+        )
+      end
+    return set_moment_page
+  end
+package.preload['Widget.Internals.convert.moment_page_to_data'] =
+  function(...)
+    local prefix_args = request('!.function.prefix_args')
+    local ws_get_input_number =
+      request('!.frontend.tekui.get_input_number')
+    local ws_get_checkbox = request('!.frontend.tekui.get_checkbox')
+    local to_two_digits_num = request('Internals.to_two_digits_num')
+    local element_exists = request('Internals.element_exists')
+    local get_moment_page =
+      function(TekUi_App)
+        if not element_exists(TekUi_App, 'moment_year') then
+          return { }
+        end
+        local get_input_number =
+          prefix_args(ws_get_input_number, TekUi_App)
+        local get_checkbox = prefix_args(ws_get_checkbox, TekUi_App)
+        return
+          {
+            year = to_two_digits_num(get_input_number('moment_year')),
+            is_next_century = get_checkbox('moment_is_next_century'),
+            month = to_two_digits_num(get_input_number('moment_month')),
+            date = to_two_digits_num(get_input_number('moment_date')),
+            day = to_two_digits_num(get_input_number('moment_day')),
+            hour = to_two_digits_num(get_input_number('moment_hour')),
+            store_hour_in_12h = get_checkbox('moment_store_hour_in_12h'),
+            minute =
+              to_two_digits_num(get_input_number('moment_minute')),
+            second =
+              to_two_digits_num(get_input_number('moment_second')),
+          }
+      end
+    return get_moment_page
+  end
+package.preload['Widget.Internals.convert.Internals.element_exists'] =
+  function(...)
+    local element_exists =
+      function(TekUi_App, element_id)
+        return not is_nil(TekUi_App:getById(element_id))
+      end
+    return element_exists
+  end
+package.preload['Widget.Internals.convert.Internals.to_two_digits_num'] =
+  function(...)
+    local constrain_number = request('!.number.constrain')
+    local to_two_digits_num =
+      function(num)
+        assert_number(num)
+        num = math.modf(num)
+        num = constrain_number(num, 0, 99)
+        return num
+      end
+    return to_two_digits_num
+  end
+package.preload['Widget.Internals.convert.Internals.to_two_digits_str'] =
+  function(...)
+    local to_two_digits_str =
+      function(n)
+        return string.format('%02d', n)
+      end
+    return to_two_digits_str
+  end
+package.preload['Widget.Internals.funcs.set_cur_time'] =
+  function(...)
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local adjust_luas_weekday =
+      function(day)
+        assert(day >= 1)
+        day = day - 1
+        if (day == 0) then
+          day = 7
+        end
+        return day
+      end
+    local create_moment_record =
+      function(seconds)
+        local Lua_DateTime = os.date('*t', seconds)
+        local is_next_century = (Lua_DateTime.year >= 2100)
+        local year = Lua_DateTime.year % 100
+        local day = adjust_luas_weekday(Lua_DateTime.wday)
+        return
+          {
+            is_next_century = is_next_century,
+            year = year,
+            month = Lua_DateTime.month,
+            date = Lua_DateTime.day,
+            day = day,
+            hour = Lua_DateTime.hour,
+            minute = Lua_DateTime.min,
+            second = Lua_DateTime.sec,
+          }
+      end
+    local get_current_moment =
+      function(OurData)
+        local round_trip_time_sec = 2
+        local cur_time = os.time() + round_trip_time_sec
+        return create_moment_record(cur_time)
+      end
+    local func_set_cur_time =
+      function(Me)
+        local CurrentMoment = get_current_moment(UiData)
+        merge_and_patch(Me.Data.Moment, CurrentMoment)
+        Me.Data.Core.time_is_spoiled = false
+        Me:DataToRaw()
+        Me:DataToUi()
+      end
+    return func_set_cur_time
+  end
+package.preload['Widget.Internals.funcs.set_end_of_day'] =
+  function(...)
+    local set_end_of_day =
+      function(Me)
+        local OurData = Me.Data
+        OurData.Moment.hour = 23
+        OurData.Moment.minute = 59
+        OurData.Moment.second = 59
+        Me:DataToRaw()
+        Me:DataToUi()
+      end
+    return set_end_of_day
+  end
+package.preload['Widget.Internals.representers.represent_alarm'] =
+  function(...)
+    local add_to_list = request('!.concepts.list.add_item')
+    local glue_words = request('!.concepts.words.to_string')
+    local get_hms_str =
+      function(Alarm, has_seconds)
+        local Result = { }
+        local hh = 'xx'
+        if not Alarm.ignore_hour then
+          hh = string.format('%02d', Alarm.hour)
+        end
+        add_to_list(Result, hh)
+        local mm = 'xx'
+        if not Alarm.ignore_minute then
+          mm = string.format('%02d', Alarm.minute)
+        end
+        add_to_list(Result, mm)
+        if has_seconds then
+          local ss = 'xx'
+          if not Alarm.ignore_second then
+            ss = string.format('%02d', Alarm.second)
+          end
+          add_to_list(Result, ss)
+        end
+        local result_str = table.concat(Result, ':')
+        return result_str
+      end
+    return
+      function(Alarm)
+        local has_seconds = is_boolean(Alarm.ignore_second)
+        local Result = { }
+        if Alarm.occurred then
+          add_to_list(Result, '[x]')
+        else
+          add_to_list(Result, '[·]')
+        end
+        add_to_list(Result, 'at')
+        if not Alarm.ignore_dateday then
+          if Alarm.is_day then
+            add_to_list(Result, 'day')
+          else
+            add_to_list(Result, 'date')
+          end
+          add_to_list(Result, string.format('%d,', Alarm.dateday))
+        end
+        add_to_list(Result, get_hms_str(Alarm, has_seconds))
+        return glue_words(Result)
+      end
+  end
+package.preload['Widget.Internals.representers.represent_core'] =
+  function(...)
+    local add_to_list = request('!.concepts.list.add_item')
+    local glue_words = request('!.concepts.words.to_string')
+    local WaveFreqNumToStr =
+      { [0] = '1 Hz', [1] = '1 KiHz', [2] = '4 KiHz', [3] = '8 KiHz' }
+    local represent_wave_freq =
+      function(wave_freq_num)
+        return string.format('[%s]', WaveFreqNumToStr[wave_freq_num])
+      end
+    local represent_core =
+      function(Core)
+        local Result = { }
+        if Core.enable_wave_32k then
+          add_to_list(Result, '[32 KiHz]')
+        end
+        if Core.output_is_from_alarms then
+          add_to_list(Result, '[alarms]')
+        else
+          add_to_list(Result, represent_wave_freq(Core.wave_freq_num))
+        end
+        if Core.time_is_spoiled then
+          add_to_list(Result, '[incorrect time]')
+        end
+        add_to_list(
+          Result, string.format('[%.2f °C]', Core.temperature)
+        )
+        return glue_words(Result)
+      end
+    return represent_core
+  end
+package.preload['Widget.Internals.representers.represent_moment'] =
+  function(...)
+    local DayNumToName =
+      {
+        [1] = 'Mon',
+        [2] = 'Tue',
+        [3] = 'Wed',
+        [4] = 'Thu',
+        [5] = 'Fri',
+        [6] = 'Sat',
+        [7] = 'Sun',
+      }
+    local represent_moment =
+      function(Moment)
+        local year = Moment.year + 2000
+        if Moment.is_next_century then
+          year = year + 100
+        end
+        return
+          string.format(
+            '%04d-%02d-%02d (%s) %02d:%02d:%02d',
+            year,
+            Moment.month,
+            Moment.date,
+            DayNumToName[Moment.day],
+            Moment.hour,
+            Moment.minute,
+            Moment.second
+          )
+      end
+    return represent_moment
+  end
+package.preload['workshop.base'] =
+  function(...)
+    local set_base_prefix
+    local split_name
+    local get_base_prefix
+    local request
+    local stack_init
+    local stack_add
+    local stack_remove
+    do
+      local str_match = string.match
+      local str_find = string.find
+      local str_sub = string.sub
+      local tbl_pack = table.pack
+      local tbl_unpack = table.unpack
+      local require = require
+      local empty = ''
+      local stack_get
+      do
+        local Names
+        local depth
+        stack_init =
+          function()
+            Names = { }
+            depth = 1
+          end
+        stack_get =
+          function()
+            return Names[depth]
+          end
+        stack_add =
+          function(prefix, name)
+            depth = depth + 1
+            Names[depth] = { prefix = prefix, name = name }
+          end
+        stack_remove =
+          function()
+            depth = depth - 1
+          end
+      end
+      local get_caller_prefix =
+        function()
+          local NameRec = stack_get()
+          if not NameRec then
+            return empty
+          end
+          return NameRec.prefix
+        end
+      do
+        local prefix_name_capture = '^(.+%.)([^%.]+)$'
+        split_name =
+          function(qualified_name)
+            local prefix, name =
+              str_match(qualified_name, prefix_name_capture)
+            if not prefix then
+              prefix = empty
+              if str_find(qualified_name, '%.') then
+                name = empty
+              else
+                name = qualified_name
+              end
+            end
+            return prefix, name
+          end
+      end
+      local apply_rel_prefix
+      do
+        local uplevel_capture = '(.+%.)[^%.]-%.$'
+        apply_rel_prefix =
+          function(base_prefix, rel_prefix)
+            while (str_sub(rel_prefix, 1, 2) == '^.') do
+              if (base_prefix == empty) then
+                error("Link is outside of caller's prefix.")
+              end
+              base_prefix =
+                str_match(base_prefix, uplevel_capture) or empty
+              rel_prefix = str_sub(rel_prefix, 3)
+            end
+            return base_prefix .. rel_prefix
+          end
+      end
+      do
+        local base_prefix
+        set_base_prefix =
+          function(arg_base_prefix)
+            base_prefix = arg_base_prefix
+          end
+        get_base_prefix =
+          function()
+            return base_prefix
+          end
+      end
+      local get_require_name =
+        function(qualified_name)
+          local caller_prefix
+          local is_absolute_name =
+            (str_sub(qualified_name, 1, 2) == '!.')
+          if is_absolute_name then
+            qualified_name = str_sub(qualified_name, 3)
+            caller_prefix = get_base_prefix()
+          else
+            caller_prefix = get_caller_prefix()
+          end
+          local prefix, name = split_name(qualified_name)
+          prefix = apply_rel_prefix(caller_prefix, prefix)
+          return prefix .. name
+        end
+      request =
+        function(qualified_name)
+          local require_name = get_require_name(qualified_name)
+          stack_add(split_name(require_name))
+          local Results = tbl_pack(require(require_name))
+          stack_remove()
+          return tbl_unpack(Results)
+        end
+    end
+    do
+      local our_require_name = (...)
+      set_base_prefix(split_name(our_require_name))
+      _G.request = request
+      _G.get_base_prefix = get_base_prefix
+      stack_init()
+      stack_add(empty, our_require_name)
+      request('!.system.install_is_functions')()
+      request('!.system.install_assert_functions')()
+      _G.new = request('!.table.new')
+      stack_remove()
+    end
+  end
+package.preload['workshop.concepts.BitChars'] =
+  function(...)
+    local BitToChar_Map = { [false] = '.', [true] = 'X' }
+    local invert_table = request('!.table.invert')
+    return
+      {
+        BitToChar_Map = BitToChar_Map,
+        CharToBit_Map = invert_table(BitToChar_Map),
+      }
+  end
+package.preload['workshop.concepts.ShellCommand'] =
+  function(...)
+    local to_string
+    do
+      local quote = request('!.concepts.shell.quote')
+      local add_to_list = request('!.concepts.list.add_item')
+      local glue_words = request('!.concepts.words.to_string')
+      to_string =
+        function(Me)
+          local command = Me[1]
+          local Args = Me[2]
+          local Words = { }
+          add_to_list(Words, quote(command))
+          for _, arg in ipairs(Args) do
+            add_to_list(Words, quote(arg))
+          end
+          return glue_words(Words)
+        end
+    end
+    local execute
+    do
+      local execute_shell_command = request('!.concepts.shell.execute')
+      execute =
+        function(Me)
+          return execute_shell_command(to_string(Me))
+        end
+    end
+    local Interface
+    do
+      local create
+      do
+        local attach_methods = request('!.table.attach_methods')
+        create =
+          function(Core)
+            do
+              assert_table(Core)
+              assert(#Core == 2)
+              local command = Core[1]
+              local Args = Core[2]
+              assert_string(command)
+              assert_table(Args)
+              for _, arg in ipairs(Args) do
+                assert_string(arg)
+              end
+            end
+            attach_methods(Core, Interface)
+            return Core
+          end
+      end
+      Interface =
+        { create = create, ToString = to_string, Execute = execute }
+    end
+    return Interface
+  end
+package.preload['workshop.concepts.Ascii.Chars'] =
+  function(...)
+    local Chars
+    do
+      local Codes = request('Codes')
+      local str_char = string.char
+      Chars = { }
+      for name, code in pairs(Codes) do
+        Chars[name] = str_char(code)
+      end
+    end
+    return Chars
+  end
+package.preload['workshop.concepts.Ascii.Codes'] =
+  function(...)
+    return
+      {
+        bell = 7,
+        backspace = 8,
+        tab = 9,
+        newline = 10,
+        vertical_tab = 11,
+        form_feed = 12,
+        carriage_return = 13,
+        space = 32,
+        delete = 127,
+        plus = 43,
+        minus = 45,
+        asterisk = 42,
+        slash = 47,
+        less_than = 60,
+        equals = 61,
+        greater_than = 62,
+        dot = 46,
+        comma = 44,
+        colon = 58,
+        semicolon = 59,
+        single_quote = 39,
+        double_quote = 34,
+        backtick = 96,
+        backslash = 92,
+        number_sign = 35,
+        question_mark = 63,
+        bang = 33,
+        percent = 37,
+        ampersand = 38,
+        dollar_sign = 36,
+        at_sign = 64,
+        caret = 94,
+        underscore = 95,
+        pipe = 124,
+        tilde = 126,
+        opening_paren = 40,
+        closing_paren = 41,
+        opening_bracket = 91,
+        closing_bracket = 93,
+        opening_brace = 123,
+        closing_brace = 125,
+      }
+  end
+package.preload['workshop.concepts.RangesTree.apply_ranges'] =
+  function(...)
+    local apply_ranges =
+      function(InputData, Ranges, OutputData)
+        for idx, Range in ipairs(Ranges) do
+          OutputData:Add(
+            InputData:GetRangeValue(Range), Range:GetLength()
+          )
+        end
+      end
+    return apply_ranges
+  end
+package.preload['workshop.concepts.RangesTree.apply_ranges_tree'] =
+  function(...)
+    local table_is_empty = request('!.table.is_empty')
+    local apply_ranges = request('apply_ranges')
+    local apply_ranges_tree_root =
+      function(InputValue, RangesTree, OutputValueClass)
+        local apply_ranges_tree
+        apply_ranges_tree =
+          function(Node, name_prefix)
+            local Result = { }
+            for key in pairs(Node.Children) do
+              local subnode_name = name_prefix .. key
+              if table_is_empty(Node.Children[key].Children) then
+                local OutputValue = OutputValueClass.create()
+                apply_ranges(
+                  InputValue,
+                  RangesTree:GetRanges(subnode_name),
+                  OutputValue
+                )
+                Result[key] = OutputValue:GetValue()
+              else
+                Result[key] =
+                  apply_ranges_tree(
+                    Node.Children[key], subnode_name .. '.'
+                  )
+              end
+            end
+            return Result
+          end
+        assert_table(InputValue)
+        assert_table(RangesTree)
+        assert_table(OutputValueClass)
+        return apply_ranges_tree(RangesTree, '')
+      end
+    return apply_ranges_tree_root
+  end
+package.preload['workshop.concepts.RangesTree.fold_tree'] =
+  function(...)
+    local fold_tree_root =
+      function(DataTree, RangesTree, ValueClass)
+        local Result = new(ValueClass)
+        local fold_tree
+        fold_tree =
+          function(DataNode, RangesNode, name_prefix)
+            for key, val in pairs(DataNode) do
+              local subnode_name = name_prefix .. key
+              if not is_table(val) then
+                local NodeRanges = RangesTree:GetRanges(subnode_name)
+                for idx, NodeRange in ipairs(NodeRanges) do
+                  Result:SetRangeValue(NodeRange, val)
+                end
+              else
+                fold_tree(
+                  val, RangesNode.Children[key], subnode_name .. '.'
+                )
+              end
+            end
+          end
+        fold_tree(DataTree, RangesTree, '')
+        return Result:GetValue()
+      end
+    return fold_tree_root
+  end
+package.preload['workshop.concepts.RangesTree.Range.Interface'] =
+  function(...)
+    local is_natural_num = request('!.number.is_natural')
+    local attach_methods = request('!.table.attach_methods')
+    local Interface
+    Interface =
+      {
+        GetStart =
+          function(Me)
+            return Me.Start
+          end,
+        GetStop =
+          function(Me)
+            return Me.Start + Me.Length - 1
+          end,
+        GetLength =
+          function(Me)
+            return Me.Length
+          end,
+        create =
+          function(start, length)
+            assert(is_natural_num(start))
+            assert(is_natural_num(length))
+            local Result = { Start = start, Length = length }
+            attach_methods(Result, Interface)
+            return Result
+          end,
+      }
+    return Interface
+  end
+package.preload['workshop.concepts.RangesTree.RangesTree.Interface'] =
+  function(...)
+    local attach_methods = request('!.table.attach_methods')
+    local split_string = request('!.string.split')
+    local add_to_list = request('!.concepts.list.add_item')
+    local get_real_ranges = request('Freetown.get_real_ranges')
+    local names_delimiter = '.'
+    local parse_name =
+      function(Me, name)
+        local NamePath = split_string(name, names_delimiter)
+        local NodesPath = { }
+        local Node = Me
+        for idx, part_name in ipairs(NamePath) do
+          Node = Node.Children[part_name] or Node
+          add_to_list(NodesPath, Node)
+        end
+        return NamePath, NodesPath
+      end
+    local Interface
+    Interface =
+      {
+        AddName =
+          function(Me, name)
+            local Names, Nodes = parse_name(Me, name)
+            local LeafNode = Nodes[#Nodes]
+            local leaf_name = Names[#Names]
+            assert_nil(LeafNode.Children[leaf_name])
+            LeafNode.Children[leaf_name] = Interface.create()
+          end,
+        AddRange =
+          function(Me, name, Range)
+            local Names, Nodes = parse_name(Me, name)
+            local LeafNode = Nodes[#Nodes]
+            add_to_list(LeafNode.Ranges, Range)
+          end,
+        GetRanges =
+          function(Me, name)
+            local Names, Nodes = parse_name(Me, name)
+            local LeafNode = Nodes[#Nodes]
+            if (#LeafNode.Ranges == 0) then
+              error('Node have no ranges')
+            end
+            local total_length = 0
+            for idx, Rec in ipairs(LeafNode.Ranges) do
+              total_length = total_length + Rec:GetLength()
+            end
+            return get_real_ranges(total_length, Nodes)
+          end,
+        AddNameAndRange =
+          function(Me, name, Range)
+            Me:AddName(name)
+            Me:AddRange(name, Range)
+          end,
+        AddRanges =
+          function(Me, name, Ranges)
+            for i = 1, #Ranges do
+              Me:AddRange(name, Ranges[i])
+            end
+          end,
+        AddNameAndRanges =
+          function(Me, name, Ranges)
+            Me:AddName(name)
+            Me:AddRanges(name, Ranges)
+          end,
+        create =
+          function()
+            local Result = { Ranges = { }, Children = { } }
+            attach_methods(Result, Interface)
+            return Result
+          end,
+      }
+    return Interface
+  end
+package.preload[
+  'workshop.concepts.RangesTree.RangesTree.Freetown.get_real_ranges'
+] =
+  function(...)
+    local is_natural_num = request('!.number.is_natural')
+    local add_to_list = request('!.concepts.list.add_item')
+    local add_list = request('!.concepts.list.add_list')
+    local select_list_seg = request('!.concepts.list.select_seg')
+    local skip_n_read =
+      function(Ranges, num_to_skip, num_to_read)
+        local Result = { }
+        local is_reading = false
+        local num_to_process = num_to_skip
+        local seg_start
+        local seg_len
+        for idx, Range in ipairs(Ranges) do
+          local range_start = Range:GetStart()
+          local range_len = Range:GetLength()
+          ::process::
+          seg_start = range_start
+          if (num_to_process < range_len) then
+            seg_len = num_to_process
+          else
+            seg_len = range_len
+          end
+          num_to_process = num_to_process - seg_len
+          if is_reading then
+            add_to_list(Result, Range.create(seg_start, seg_len))
+          end
+          if (num_to_process == 0) then
+            if not is_reading then
+              num_to_process = num_to_read
+              is_reading = true
+            else
+              break
+            end
+          end
+          if (seg_len < range_len) then
+            range_start = range_start + seg_len
+            range_len = range_len - seg_len
+            goto process
+          end
+        end
+        return Result
+      end
+    local get_real_ranges
+    get_real_ranges =
+      function(Ranges, NodesPath)
+        local Node = NodesPath[#NodesPath]
+        local OurRanges = { }
+        for idx, Range in ipairs(Ranges) do
+          local num_to_skip = Range:GetStart() - 1
+          local num_to_read = Range:GetLength()
+          local AdjustedRanges =
+            skip_n_read(Node.Ranges, num_to_skip, num_to_read)
+          add_list(OurRanges, AdjustedRanges)
+        end
+        if (#NodesPath >= 2) then
+          local ParentNodesPath =
+            select_list_seg(NodesPath, 1, #NodesPath - 1)
+          return get_real_ranges(OurRanges, ParentNodesPath)
+        end
+        return OurRanges
+      end
+    local get_real_ranges_root =
+      function(num_to_read, NodesPath)
+        assert(is_natural_num(num_to_read))
+        assert_table(NodesPath)
+        assert(#NodesPath >= 1)
+        local Range = NodesPath[1].Ranges[1].create(1, num_to_read)
+        return get_real_ranges({ Range }, NodesPath)
+      end
+    return get_real_ranges_root
+  end
+package.preload['workshop.concepts.RangesTree.StringValue.Interface'] =
+  function(...)
+    local attach_methods = request('!.table.attach_methods')
+    local Interface
+    Interface =
+      {
+        SetValue =
+          function(Me, str)
+            assert_string(str)
+            Me.Value = str
+          end,
+        GetValue =
+          function(Me)
+            assert_string(Me.Value)
+            return Me.Value
+          end,
+        GetRangeValue =
+          function(Me, Range)
+            return
+              string.sub(
+                Me:GetValue(), Range:GetStart(), Range:GetStop()
+              )
+          end,
+        Add =
+          function(Me, value, data_len)
+            Me:SetValue(Me:GetValue() .. value)
+          end,
+        SetDefaultItemValue =
+          function(Me, empty_char)
+            assert_string(empty_char)
+            assert(string.len(empty_char) == 1)
+            Me.EmptyChar = empty_char
+          end,
+        GetDefaultItemValue =
+          function(Me)
+            assert_string(Me.EmptyChar)
+            return Me.EmptyChar
+          end,
+        SetRangeValue =
+          function(Me, DataRange, value)
+            local our_value = Me:GetValue()
+            local empty_char = Me:GetDefaultItemValue()
+            local our_value_len = string.len(our_value)
+            local range_end_pos = DataRange:GetStop()
+            if (our_value_len < range_end_pos) then
+              local delta_len = range_end_pos - our_value_len
+              local dummy_str = string.rep(empty_char, delta_len)
+              our_value = our_value .. dummy_str
+            end
+            Me:SetValue(
+              string.sub(our_value, 1, DataRange:GetStart() - 1) ..
+              string.sub(value, 1, DataRange:GetLength()) ..
+              string.sub(
+                our_value, DataRange:GetStop() + 1, our_value_len
+              )
+            )
+          end,
+        create =
+          function()
+            local Result = { Value = '', EmptyChar = '?' }
+            attach_methods(Result, Interface)
+            return Result
+          end,
+      }
+    return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Teletype'] =
+  function(...)
+    local close
+    local open
+    do
+      local read_timeout_sec = 0.1
+      local warmup_delay_sec = 4.2
+      local exists = request('!.file_system.file.is_byte_stream_device')
+      local tty_get_raw_params = request('!.mechs.tty.get_raw_params')
+      local tty_set_params = request('!.mechs.tty.set_params')
+      local sleep_sec = request('!.system.sleep')
+      local InputInterface = request('!.concepts.StreamIo.Input.File')
+      local OutputInterface = request('!.concepts.StreamIo.Output.File')
+      open =
+        function(Me, speed_bps)
+          if not exists(Me[1]) then
+            return
+          end
+          if Me[2] then
+            close(Me)
+          end
+          Me[3] = tty_get_raw_params(Me[1])
+          tty_set_params(
+            Me[1],
+            { speed_bps = speed_bps, read_timeout_s = read_timeout_sec }
+          )
+          Me[4] = io.open(Me[1], 'r+')
+          Me[4]:setvbuf('no')
+          sleep_sec(warmup_delay_sec)
+          Me.Input = InputInterface.create(Me[1])
+          Me.Input[2] = Me[4]
+          Me.Output = OutputInterface.create(Me[1])
+          Me.Output[2] = Me[4]
+          Me[2] = true
+          return true
+        end
+    end
+    do
+      local tty_set_raw_params = request('!.mechs.tty.set_raw_params')
+      close =
+        function(Me)
+          if not Me[3] then
+            return
+          end
+          Me[4] = nil
+          Me.Input[2] = Me[4]
+          Me.Output[2] = Me[4]
+          tty_set_raw_params(Me[1], Me[3])
+          Me[3] = nil
+          Me[1] = nil
+          Me[2] = false
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(device_file_name)
+          local Me = { device_file_name }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      {
+        create = create,
+        Open = open,
+        Close = close,
+        Input = nil,
+        Output = nil,
+      }
+    return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Input.File'] =
+  function(...)
+    local open
+    do
+      local open_file_for_reading =
+        request('!.file_system.file.open_for_reading')
+      open =
+        function(Me)
+          Me[2] = open_file_for_reading(Me[1])
+        end
+    end
+    local close
+    do
+      local close_file = request('!.file_system.file.close')
+      close =
+        function(Me)
+          close_file(Me[2])
+        end
+    end
+    local read
+    do
+      local is_natural = request('!.number.is_natural')
+      read =
+        function(Me, num_bytes)
+          assert(is_natural(num_bytes))
+          local data_str = Me[2]:read(num_bytes)
+          if is_nil(data_str) then
+            data_str = ''
+          end
+          return data_str
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(pathname)
+          assert_string(pathname)
+          local Me = { pathname, 0 }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Open = open, Close = close, Read = read }
+    return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Input.String'] =
+  function(...)
+    local is_natural = request('!.number.is_natural')
+    local Interface =
+      {
+        Init =
+          function(Me, arg_data_str)
+            assert_string(arg_data_str)
+            Me.data_str = arg_data_str
+            Me.data_len = string.len(Me.data_str)
+            Me.read_pos = 1
+          end,
+        Read =
+          function(Me, num_bytes)
+            assert(is_natural(num_bytes))
+            local start_pos = Me.read_pos
+            local end_pos =
+              math.min(start_pos + num_bytes - 1, Me.data_len)
+            Me.read_pos = end_pos + 1
+            return string.sub(Me.data_str, start_pos, end_pos)
+          end,
+        data_str = '',
+        data_len = 0,
+        read_pos = 1,
+      }
+    return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Output.File'] =
+  function(...)
+    local open
+    do
+      local create_file = request('!.file_system.file.create')
+      local open_for_writing =
+        request('!.file_system.file.open_for_writing')
+      open =
+        function(Me)
+          create_file(Me[1], '')
+          Me[2] = open_for_writing(Me[1])
+        end
+    end
+    local close
+    do
+      local close_file = request('!.file_system.file.close')
+      close =
+        function(Me)
+          close_file(Me[2])
+        end
+    end
+    local write =
+      function(Me, data_str)
+        assert_string(data_str)
+        Me[2]:write(data_str)
+      end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(pathname)
+          assert_string(pathname)
+          local Me = { pathname, 0 }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Open = open, Close = close, Write = write }
+    return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Output.String'] =
+  function(...)
+    local write
+    do
+      local add_to = request('!.concepts.list.add_item')
+      write =
+        function(Me, data_str)
+          assert_string(data_str)
+          add_to(Me, data_str)
+        end
+    end
+    local get_string
+    do
+      local list_to_string = request('!.concepts.list.to_string')
+      get_string =
+        function(Me)
+          return list_to_string(Me)
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function()
+          local Me = { }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Write = write, GetString = get_string }
+    return create()
+  end
+package.preload['workshop.concepts.arduino_uno.assert_valid_pin_number'] =
+  function(...)
+    local num_pins = request('num_pins')
+    return
+      function(pin_number)
+        assert_integer(pin_number)
+        assert((pin_number >= 0) and (pin_number < num_pins))
+      end
+  end
+package.preload['workshop.concepts.arduino_uno.get_pin_analog_index'] =
+  function(...)
+    local num_pins = request('num_pins')
+    return
+      function(pin_number)
+        assert_integer(pin_number)
+        if (pin_number >= 14) and (pin_number < num_pins) then
+          return pin_number - 14
+        else
+          return false
+        end
+      end
+  end
+package.preload['workshop.concepts.arduino_uno.interface'] =
+  function(...)
+    return
+      {
+        num_pins = request('num_pins'),
+        assert_valid_pin_number = request('assert_valid_pin_number'),
+        get_pin_analog_index = request('get_pin_analog_index'),
+      }
+  end
+package.preload['workshop.concepts.arduino_uno.num_pins'] =
+  function(...)
+    return 20
+  end
+package.preload['workshop.concepts.codec_ds3231.compile'] =
+  function(...)
+    local ds3231_values_to_bits =
+      request('compile.ds3231_values_to_bits')
+    local StringValue =
+      request('!.concepts.RangesTree.StringValue.Interface')
+    local default_bit_char =
+      request('!.concepts.BitChars').BitToChar_Map[false]
+    local get_bitfields = request('common.get_bitfields')
+    local fold_tree = request('!.concepts.RangesTree.fold_tree')
+    local bits_to_bytes = request('!.convert.bits_to_bytes')
+    local bytes_to_str = request('!.convert.bytes_to_str')
+    local compile =
+      function(Ds3231_Data)
+        assert_table(Ds3231_Data)
+        local BitsDataTree = ds3231_values_to_bits(Ds3231_Data)
+        local OutputStr = StringValue.create()
+        OutputStr:SetDefaultItemValue(default_bit_char)
+        local Bitfields = get_bitfields()
+        local data_bits = fold_tree(BitsDataTree, Bitfields, OutputStr)
+        return bytes_to_str(bits_to_bytes(data_bits))
+      end
+    return compile
+  end
+package.preload['workshop.concepts.codec_ds3231.parse'] =
+  function(...)
+    local StringValue =
+      request('!.concepts.RangesTree.StringValue.Interface')
+    local bytes_from_str = request('!.convert.bytes_from_str')
+    local bits_from_bytes = request('!.convert.bits_from_bytes')
+    local get_bitfields = request('common.get_bitfields')
+    local apply_ranges_tree =
+      request('!.concepts.RangesTree.apply_ranges_tree')
+    local ds3231_values_from_bits =
+      request('parse.ds3231_values_from_bits')
+    local parse =
+      function(data_str)
+        assert_string(data_str)
+        local InputStr = StringValue.create()
+        InputStr:SetValue(bits_from_bytes(bytes_from_str(data_str)))
+        local Bitfields = get_bitfields()
+        local BitsDataTree =
+          apply_ranges_tree(InputStr, Bitfields, StringValue)
+        return ds3231_values_from_bits(BitsDataTree)
+      end
+    return parse
+  end
+package.preload['workshop.concepts.codec_ds3231.common.get_bitfields'] =
+  function(...)
+    local ds3231_ranges_tree_is =
+      [[
+(                             Moment
+  (
+                                                    ( 001 56 )
+    second_bcd         ( 01 7 )
+    minute_bcd         ( 09 7 )
+    hour_data          ( 17 6 )
+    hour_is_12h_format ( 23 1 )
+    day_bcd            ( 25 3 )
+    date_bcd           ( 33 6 )
+    month_bcd          ( 41 5 )
+    is_next_century    ( 48 1 )
+    year_bcd           ( 49 8 )
+  )
+                              Alarm_1
+  (
+                                                    ( 057 32 )
+    second_bcd         ( 01 7 )
+    ignore_second      ( 08 1 )
+
+    minute_bcd         ( 09 7 )
+    ignore_minute      ( 16 1 )
+
+    hour_data          ( 17 6 )
+    hour_is_12h_format ( 23 1 )
+    ignore_hour        ( 24 1 )
+
+    dateday_bcd        ( 25 6 )
+    dateday_is_day     ( 31 1 )
+    ignore_dateday     ( 32 1 )
+  )
+                              Alarm_2
+  (
+                                                    ( 089 024 )
+
+    minute_bcd         ( 01 7 )
+    ignore_minute      ( 08 1 )
+
+    hour_data          ( 09 6 )
+    hour_is_12h_format ( 15 1 )
+    ignore_hour        ( 16 1 )
+
+    dateday_bcd        ( 17 6 )
+    dateday_is_day     ( 23 1 )
+    ignore_dateday     ( 24 1 )
+  )
+                              Status
+  (
+                                                    ( 113 40 )
+    alarm_1_enabled          ( 01 1 )
+    alarm_2_enabled          ( 02 1 )
+    output_is_from_alarms    ( 03 1 )
+    wave_freq_num            ( 04 2 )
+    getting_temperature      ( 06 1 )
+    atbattery_enable_wave    ( 07 1 )
+    atbattery_clock_disabled ( 08 1 )
+    alarm_1_occurred         ( 09 1 )
+    alarm_2_occurred         ( 10 1 )
+    is_busy                  ( 11 1 )
+    32kihz_pin_enabled       ( 12 1 )
+    time_is_spoiled          ( 16 1 )
+    speed_trim               ( 17 8 )
+
+                Temperature
+    (
+                                        ( 25 16 )
+      int                 ( 01 7 )
+      is_neg              ( 08 1 )
+      frac                ( 15 2 )
+    )
+  )
+)
+]]
+    local itness_from_str = request('!.convert.itness_from_str')
+    local ranges_tree_from_itness =
+      request('!.convert.ranges_tree_from_itness')
+    local get_bitfields =
+      function()
+        local Bitfields_Is = itness_from_str(ds3231_ranges_tree_is)
+        return ranges_tree_from_itness(Bitfields_Is)
+      end
+    return get_bitfields
+  end
+package.preload[
+  'workshop.concepts.codec_ds3231.compile.ds3231_values_to_bits'
+] =
+  function(...)
+    local bool_to_bit = request('!.convert.bool_to_bit')
+    local byte_to_bits = request('!.convert.byte_to_bits')
+    local sint8_to_byte = request('!.convert.sint8_to_byte')
+    local tree_values_to_bits =
+      function(DataTree)
+        return
+          {
+            Status =
+              {
+                ['32kihz_pin_enabled'] =
+                  bool_to_bit(DataTree.Status['32kihz_pin_enabled']),
+                alarm_1_enabled =
+                  bool_to_bit(DataTree.Status.alarm_1_enabled),
+                alarm_1_occurred =
+                  bool_to_bit(DataTree.Status.alarm_1_occurred),
+                alarm_2_occurred =
+                  bool_to_bit(DataTree.Status.alarm_2_occurred),
+                is_busy = bool_to_bit(DataTree.Status.is_busy),
+                atbattery_clock_disabled =
+                  bool_to_bit(DataTree.Status.atbattery_clock_disabled),
+                getting_temperature =
+                  bool_to_bit(DataTree.Status.getting_temperature),
+                atbattery_enable_wave =
+                  bool_to_bit(DataTree.Status.atbattery_enable_wave),
+                output_is_from_alarms =
+                  bool_to_bit(DataTree.Status.output_is_from_alarms),
+                time_is_spoiled =
+                  bool_to_bit(DataTree.Status.time_is_spoiled),
+                speed_trim =
+                  byte_to_bits(
+                    sint8_to_byte(DataTree.Status.speed_trim)
+                  ),
+                wave_freq_num =
+                  byte_to_bits(DataTree.Status.wave_freq_num),
+                Temperature =
+                  {
+                    is_neg =
+                      bool_to_bit(DataTree.Status.Temperature.is_neg),
+                    int = byte_to_bits(DataTree.Status.Temperature.int),
+                    frac =
+                      byte_to_bits(DataTree.Status.Temperature.frac),
+                  },
+              },
+            Moment =
+              {
+                is_next_century =
+                  bool_to_bit(DataTree.Moment.is_next_century),
+                year_bcd = byte_to_bits(DataTree.Moment.year_bcd),
+                month_bcd = byte_to_bits(DataTree.Moment.month_bcd),
+                date_bcd = byte_to_bits(DataTree.Moment.date_bcd),
+                day_bcd = byte_to_bits(DataTree.Moment.day_bcd),
+                hour_is_12h_format =
+                  bool_to_bit(DataTree.Moment.hour_is_12h_format),
+                hour_data = byte_to_bits(DataTree.Moment.hour_data),
+                minute_bcd = byte_to_bits(DataTree.Moment.minute_bcd),
+                second_bcd = byte_to_bits(DataTree.Moment.second_bcd),
+              },
+            Alarm_1 =
+              {
+                dateday_bcd = byte_to_bits(DataTree.Alarm_1.dateday_bcd),
+                dateday_is_day =
+                  bool_to_bit(DataTree.Alarm_1.dateday_is_day),
+                ignore_dateday =
+                  bool_to_bit(DataTree.Alarm_1.ignore_dateday),
+                hour_is_12h_format =
+                  bool_to_bit(DataTree.Alarm_1.hour_is_12h_format),
+                hour_data = byte_to_bits(DataTree.Alarm_1.hour_data),
+                ignore_hour = bool_to_bit(DataTree.Alarm_1.ignore_hour),
+                minute_bcd = byte_to_bits(DataTree.Alarm_1.minute_bcd),
+                ignore_minute =
+                  bool_to_bit(DataTree.Alarm_1.ignore_minute),
+                second_bcd = byte_to_bits(DataTree.Alarm_1.second_bcd),
+                ignore_second =
+                  bool_to_bit(DataTree.Alarm_1.ignore_second),
+              },
+            Alarm_2 =
+              {
+                dateday_bcd = byte_to_bits(DataTree.Alarm_2.dateday_bcd),
+                dateday_is_day =
+                  bool_to_bit(DataTree.Alarm_2.dateday_is_day),
+                ignore_dateday =
+                  bool_to_bit(DataTree.Alarm_2.ignore_dateday),
+                hour_is_12h_format =
+                  bool_to_bit(DataTree.Alarm_2.hour_is_12h_format),
+                hour_data = byte_to_bits(DataTree.Alarm_2.hour_data),
+                ignore_hour = bool_to_bit(DataTree.Alarm_2.ignore_hour),
+                minute_bcd = byte_to_bits(DataTree.Alarm_2.minute_bcd),
+                ignore_minute =
+                  bool_to_bit(DataTree.Alarm_2.ignore_minute),
+              },
+          }
+      end
+    return tree_values_to_bits
+  end
+package.preload[
+  'workshop.concepts.codec_ds3231.parse.ds3231_values_from_bits'
+] =
+  function(...)
+    local bool_from_bit = request('!.convert.bool_from_bit')
+    local byte_from_bits = request('!.convert.byte_from_bits')
+    local sint8_from_byte = request('!.convert.sint8_from_byte')
+    local tree_values_from_bits =
+      function(DataTree)
+        return
+          {
+            Status =
+              {
+                ['32kihz_pin_enabled'] =
+                  bool_from_bit(DataTree.Status['32kihz_pin_enabled']),
+                alarm_1_enabled =
+                  bool_from_bit(DataTree.Status.alarm_1_enabled),
+                alarm_1_occurred =
+                  bool_from_bit(DataTree.Status.alarm_1_occurred),
+                alarm_2_occurred =
+                  bool_from_bit(DataTree.Status.alarm_2_occurred),
+                is_busy = bool_from_bit(DataTree.Status.is_busy),
+                atbattery_clock_disabled =
+                  bool_from_bit(
+                    DataTree.Status.atbattery_clock_disabled
+                  ),
+                getting_temperature =
+                  bool_from_bit(DataTree.Status.getting_temperature),
+                atbattery_enable_wave =
+                  bool_from_bit(DataTree.Status.atbattery_enable_wave),
+                output_is_from_alarms =
+                  bool_from_bit(DataTree.Status.output_is_from_alarms),
+                time_is_spoiled =
+                  bool_from_bit(DataTree.Status.time_is_spoiled),
+                speed_trim =
+                  sint8_from_byte(
+                    byte_from_bits(DataTree.Status.speed_trim)
+                  ),
+                wave_freq_num =
+                  byte_from_bits(DataTree.Status.wave_freq_num),
+                Temperature =
+                  {
+                    is_neg =
+                      bool_from_bit(DataTree.Status.Temperature.is_neg),
+                    int =
+                      byte_from_bits(DataTree.Status.Temperature.int),
+                    frac =
+                      byte_from_bits(DataTree.Status.Temperature.frac),
+                  },
+              },
+            Moment =
+              {
+                is_next_century =
+                  bool_from_bit(DataTree.Moment.is_next_century),
+                year_bcd = byte_from_bits(DataTree.Moment.year_bcd),
+                month_bcd = byte_from_bits(DataTree.Moment.month_bcd),
+                date_bcd = byte_from_bits(DataTree.Moment.date_bcd),
+                day_bcd = byte_from_bits(DataTree.Moment.day_bcd),
+                hour_is_12h_format =
+                  bool_from_bit(DataTree.Moment.hour_is_12h_format),
+                hour_data = byte_from_bits(DataTree.Moment.hour_data),
+                minute_bcd = byte_from_bits(DataTree.Moment.minute_bcd),
+                second_bcd = byte_from_bits(DataTree.Moment.second_bcd),
+              },
+            Alarm_1 =
+              {
+                dateday_bcd =
+                  byte_from_bits(DataTree.Alarm_1.dateday_bcd),
+                dateday_is_day =
+                  bool_from_bit(DataTree.Alarm_1.dateday_is_day),
+                ignore_dateday =
+                  bool_from_bit(DataTree.Alarm_1.ignore_dateday),
+                hour_is_12h_format =
+                  bool_from_bit(DataTree.Alarm_1.hour_is_12h_format),
+                hour_data = byte_from_bits(DataTree.Alarm_1.hour_data),
+                ignore_hour =
+                  bool_from_bit(DataTree.Alarm_1.ignore_hour),
+                minute_bcd = byte_from_bits(DataTree.Alarm_1.minute_bcd),
+                ignore_minute =
+                  bool_from_bit(DataTree.Alarm_1.ignore_minute),
+                second_bcd = byte_from_bits(DataTree.Alarm_1.second_bcd),
+                ignore_second =
+                  bool_from_bit(DataTree.Alarm_1.ignore_second),
+              },
+            Alarm_2 =
+              {
+                dateday_bcd =
+                  byte_from_bits(DataTree.Alarm_2.dateday_bcd),
+                dateday_is_day =
+                  bool_from_bit(DataTree.Alarm_2.dateday_is_day),
+                ignore_dateday =
+                  bool_from_bit(DataTree.Alarm_2.ignore_dateday),
+                hour_is_12h_format =
+                  bool_from_bit(DataTree.Alarm_2.hour_is_12h_format),
+                hour_data = byte_from_bits(DataTree.Alarm_2.hour_data),
+                ignore_hour =
+                  bool_from_bit(DataTree.Alarm_2.ignore_hour),
+                minute_bcd = byte_from_bits(DataTree.Alarm_2.minute_bcd),
+                ignore_minute =
+                  bool_from_bit(DataTree.Alarm_2.ignore_minute),
+              },
+          }
+      end
+    return tree_values_from_bits
+  end
+package.preload['workshop.concepts.codec_itness.parse'] =
+  function(...)
+    local Syntax = request('common.Syntax')
+    local read_token
+    do
+      local quote_open_char = Syntax.quote_open_char
+      local quote_close_char = Syntax.quote_close_char
+      local space_char = Syntax.delimiters_space_char
+      local newline_char = Syntax.delimiters_newline_char
+      local StringStreamClass =
+        request('!.concepts.StreamIo.Output.String')
+      read_token =
+        function(Input)
+          local StringStream = new(StringStreamClass)
+          local in_quotes = false
+          while true do
+            local char = Input:Read(1)
+            if (char == '') then
+              return StringStream:GetString()
+            end
+            if in_quotes then
+              if (char == quote_close_char) then
+                in_quotes = false
+              else
+                StringStream:Write(char)
+              end
+            else
+              if (char == space_char) or (char == newline_char) then
+                local token = StringStream:GetString()
+                if (token ~= '') then
+                  return token
+                end
+              elseif (char == quote_open_char) then
+                in_quotes = true
+              else
+                StringStream:Write(char)
+              end
+            end
+          end
+        end
+    end
+    local parse
+    do
+      local group_open_char = Syntax.group_open_char
+      local group_close_char = Syntax.group_close_char
+      local add_to_list = request('!.concepts.list.add_item')
+      parse =
+        function(Input)
+          while true do
+            local token = read_token(Input)
+            if (token == '') then
+              return
+            end
+            if (token == group_open_char) then
+              local Result = { }
+              while true do
+                local Node = parse(Input)
+                if not Node then
+                  break
+                end
+                add_to_list(Result, Node)
+              end
+              return Result
+            elseif (token == group_close_char) then
+              return
+            else
+              return token
+            end
+          end
+        end
+    end
+    return parse
+  end
+package.preload['workshop.concepts.codec_itness.common.Syntax'] =
+  function(...)
+    local Syntax =
+      {
+        delimiters_space_char = ' ',
+        delimiters_newline_char = '\n',
+        quote_open_char = '[',
+        quote_close_char = ']',
+        group_open_char = '(',
+        group_close_char = ')',
+      }
+    return Syntax
+  end
+package.preload['workshop.concepts.daytime.from_ampm_hour'] =
+  function(...)
+    return
+      function(hour, is_pm)
+        assert_integer(hour)
+        assert_boolean(is_pm)
+        hour = hour % 12
+        if is_pm then
+          hour = hour + 12
+        end
+        return hour
+      end
+  end
+package.preload['workshop.concepts.daytime.to_ampm_hour'] =
+  function(...)
+    return
+      function(hour)
+        assert_integer(hour)
+        local is_pm = (hour >= 12)
+        if is_pm then
+          hour = hour - 12
+        end
+        if (hour == 0) then
+          hour = 12
+        end
+        return hour, is_pm
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.interface'] =
+  function(...)
+    local merge = request('!.table.merge')
+    local result =
+      {
+        request = request('request.interface'),
+        reply = request('reply.interface'),
+      }
+    merge(result, request('implementation.interface'))
+    return result
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.emit'
+] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    return
+      function(self, ...)
+        local num_terms = select('#', ...)
+        for i = 1, num_terms do
+          local term = select(i, ...)
+          assert_byte(term)
+          local char = string.char(term)
+          self.output:write(char)
+        end
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.emit_bytes'
+] =
+  function(...)
+    local get_bits = request('!.number.get_bits')
+    return
+      function(self, ...)
+        for i = 1, select('#', ...) do
+          local term = select(i, ...)
+          self:emit(get_bits(term, 0, 6), get_bits(term, 7, 13))
+        end
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.emit_string'
+] =
+  function(...)
+    return
+      function(self, s)
+        assert_string(s)
+        self:emit_bytes(s:byte(1, -1))
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.i2c_create_mode_byte'
+] =
+  function(...)
+    local assert_device_id = request('!.concepts.i2c.assert_device_id')
+    local modes = request('i2c_modes')
+    return
+      function(...)
+        local auto_restart_transmission = false
+        local mode
+        local device_id
+        for i = 1, select('#', ...) do
+          local term = select(i, ...)
+          if is_boolean(term) then
+            auto_restart_transmission = term
+          elseif is_string(term) then
+            mode = term
+          elseif is_integer(term) then
+            device_id = term
+          else
+            local msg = ('Bad argument type: "%s".'):format(type(term))
+            error(msg)
+          end
+        end
+        assert_boolean(auto_restart_transmission)
+        assert(modes[mode])
+        assert_device_id(device_id)
+        local bit_6 = (auto_restart_transmission and 1) or 0
+        local ten_bit_device_id = (device_id >= 0x80)
+        local bit_5 = (ten_bit_device_id and 1) or 0
+        local bits_34 = modes[mode]
+        local bits_02 = (ten_bit_device_id and device_id >> 7) or 0
+        local result =
+          bits_02 | (bits_34 << 3) | (bit_5 << 5) | (bit_6 << 6)
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.i2c_emit_request'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local create_mode_byte = request('i2c_create_mode_byte')
+    return
+      function(self, mode, device_id, restart_reads)
+        restart_reads = restart_reads or false
+        self:emit(signatures.i2c_request, device_id & 0x7F)
+        local mode_byte =
+          create_mode_byte(mode, device_id, restart_reads)
+        self:emit(mode_byte)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.i2c_modes'
+] =
+  function(...)
+    return
+      { write = 0, read = 1, read_continiously = 2, stop_reading = 3 }
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.implementation.interface'
+] =
+  function(...)
+    return
+      {
+        emit = request('emit'),
+        emit_bytes = request('emit_bytes'),
+        emit_string = request('emit_string'),
+        i2c_emit_request = request('i2c_emit_request'),
+        output = '',
+      }
+  end
+package.preload['workshop.concepts.firmata.compiler.reply.i2c_reply'] =
+  function(...)
+    local assert_device_id = request('!.concepts.i2c.assert_device_id')
+    local assert_byte = request('!.number.assert_byte')
+    local get_bits = request('!.number.get_bits')
+    local Signatures = request('!.concepts.firmata.protocol.signatures')
+    local compile_i2c_reply =
+      function(Me, device_id, offset, ...)
+        assert_device_id(device_id)
+        assert_byte(offset)
+        Me:emit(
+          Signatures.sysex_start,
+          Signatures.i2c_reply,
+          get_bits(device_id, 0, 6),
+          get_bits(device_id, 7, 13)
+        )
+        Me:emit_bytes(offset, ...)
+        Me:emit(Signatures.sysex_end)
+      end
+    return compile_i2c_reply
+  end
+package.preload['workshop.concepts.firmata.compiler.reply.interface'] =
+  function(...)
+    return
+      {
+        i2c_reply = request('i2c_reply'),
+        report_analog_mapping = request('report_analog_mapping'),
+        report_protocol_version = request('report_protocol_version'),
+        report_version = request('report_version'),
+        send_string = request('send_string'),
+      }
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.reply.report_analog_mapping'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local board = request('!.concepts.arduino_uno.interface')
+    return
+      function(self)
+        self:emit(
+          signatures.sysex_start, signatures.report_analog_mapping
+        )
+        for pin_number = 0, (board.num_pins - 1) do
+          local analog_index =
+            board.get_pin_analog_index(pin_number) or 127
+          self:emit(analog_index)
+        end
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.reply.report_protocol_version'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local version = request('!.concepts.firmata.protocol.version')
+    return
+      function(self)
+        self:emit(
+          signatures.protocol_version, version.major, version.minor
+        )
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.reply.report_version'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local version = request('!.concepts.firmata.protocol.version')
+    return
+      function(self)
+        self:emit(
+          signatures.sysex_start,
+          signatures.firmware,
+          version.major,
+          version.minor
+        )
+        self:emit_string(version.file_name)
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.reply.send_string'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self, s)
+        assert_string(s)
+        local max_len_msg =
+          'Maximum string length is limited to 30 characters by Arduino part.'
+        assert(#s <= 30, max_len_msg)
+        self:emit(signatures.sysex_start, signatures.send_string)
+        self:emit_string(s)
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.disable_analog_reporting'
+] =
+  function(...)
+    local toggle_analog_reporting = request('toggle_analog_reporting')
+    return
+      function(self, analog_pin)
+        toggle_analog_reporting(self, analog_pin, 0)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.disable_digital_reporting'
+] =
+  function(...)
+    local toggle_digital_reporting = request('toggle_digital_reporting')
+    return
+      function(self, port_index)
+        toggle_digital_reporting(self, port_index, 0)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.enable_analog_reporting'
+] =
+  function(...)
+    local toggle_analog_reporting = request('toggle_analog_reporting')
+    return
+      function(self, analog_pin)
+        toggle_analog_reporting(self, analog_pin, 1)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.enable_digital_reporting'
+] =
+  function(...)
+    local toggle_digital_reporting = request('toggle_digital_reporting')
+    return
+      function(self, port_index)
+        toggle_digital_reporting(self, port_index, 1)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.get_analog_mapping'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self)
+        self:emit(
+          signatures.sysex_start,
+          signatures.query_analog_mapping,
+          signatures.sysex_end
+        )
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.get_capabilities'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self)
+        self:emit(
+          signatures.sysex_start,
+          signatures.query_capabilities,
+          signatures.sysex_end
+        )
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.get_pin_state'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self, pin_number)
+        self:emit(
+          signatures.sysex_start,
+          signatures.query_pin_state,
+          pin_number,
+          signatures.sysex_end
+        )
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.get_protocol_version'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self)
+        self:emit(signatures.protocol_version)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.get_version'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self)
+        self:emit(
+          signatures.sysex_start,
+          signatures.firmware,
+          signatures.sysex_end
+        )
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.request.i2c_config'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local assert_byte = request('!.number.assert_byte')
+    return
+      function(self, delay_micros)
+        delay_micros = delay_micros or 0
+        assert_byte(delay_micros)
+        self:emit(signatures.sysex_start, signatures.i2c_config)
+        if (delay_micros > 0) then
+          self:emit_bytes(delay_micros)
+        end
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.request.i2c_read'] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    local Signatures = request('!.concepts.firmata.protocol.signatures')
+    local compile_i2c_read =
+      function(Me, device_id, offset, num_bytes)
+        assert_byte(offset)
+        assert_byte(num_bytes)
+        Me:emit(Signatures.sysex_start)
+        Me:i2c_emit_request('read', device_id)
+        Me:emit_bytes(offset, num_bytes)
+        Me:emit(Signatures.sysex_end)
+      end
+    return compile_i2c_read
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.i2c_read_cont'
+] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    local Signatures = request('!.concepts.firmata.protocol.signatures')
+    local compile_i2c_read_cont =
+      function(self, device_id, offset, num_bytes)
+        assert_byte(offset)
+        assert_byte(num_bytes)
+        local restart_reads = true
+        self:emit(Signatures.sysex_start)
+        self:i2c_emit_request(
+          'read_continiously', device_id, restart_reads
+        )
+        self:emit_bytes(offset, num_bytes)
+        self:emit(Signatures.sysex_end)
+      end
+    return compile_i2c_read_cont
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.i2c_read_stop'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self, device_id)
+        self:emit(signatures.sysex_start)
+        self:i2c_emit_request('stop_reading', device_id)
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.request.i2c_write'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self, device_id, ...)
+        self:emit(signatures.sysex_start)
+        self:i2c_emit_request('write', device_id)
+        self:emit_bytes(...)
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload['workshop.concepts.firmata.compiler.request.interface'] =
+  function(...)
+    return
+      {
+        system_reset = request('system_reset'),
+        get_version = request('get_version'),
+        get_protocol_version = request('get_protocol_version'),
+        get_capabilities = request('get_capabilities'),
+        get_analog_mapping = request('get_analog_mapping'),
+        set_pin_mode = request('set_pin_mode'),
+        set_pin_value = request('set_pin_value'),
+        set_pin_value_long = request('set_pin_value_long'),
+        get_pin_state = request('get_pin_state'),
+        enable_analog_reporting = request('enable_analog_reporting'),
+        disable_analog_reporting = request('disable_analog_reporting'),
+        toggle_analog_reporting = request('toggle_analog_reporting'),
+        enable_digital_reporting = request('enable_digital_reporting'),
+        disable_digital_reporting = request('disable_digital_reporting'),
+        toggle_digital_reporting = request('toggle_digital_reporting'),
+        set_sampling_interval = request('set_sampling_interval'),
+        i2c_config = request('i2c_config'),
+        i2c_read = request('i2c_read'),
+        i2c_read_cont = request('i2c_read_cont'),
+        i2c_read_stop = request('i2c_read_stop'),
+        i2c_write = request('i2c_write'),
+      }
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.set_pin_mode'
+] =
+  function(...)
+    local firmata = request('!.concepts.firmata.protocol.interface')
+    local assert_valid_pin_number =
+      request('!.concepts.arduino_uno.assert_valid_pin_number')
+    return
+      function(self, pin_number, mode_name)
+        assert_valid_pin_number(pin_number)
+        firmata.assert_valid_pin_mode(mode_name)
+        local mode_id = firmata.pin_modes[mode_name]
+        self:emit(firmata.signatures.pin_mode, pin_number, mode_id)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.set_pin_value'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local assert_bit = request('!.number.assert_bit')
+    local assert_valid_pin_number =
+      request('!.concepts.arduino_uno.assert_valid_pin_number')
+    return
+      function(self, pin_number, pin_value)
+        assert_valid_pin_number(pin_number)
+        assert_bit(pin_value)
+        self:emit(signatures.pin_value, pin_number, pin_value)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.set_pin_value_long'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local assert_valid_pin_number =
+      request('!.concepts.arduino_uno.assert_valid_pin_number')
+    local get_bits = request('!.number.get_bits')
+    local get_msb = request('!.number.get_msb')
+    return
+      function(self, pin_number, value)
+        assert_valid_pin_number(pin_number)
+        local msb = get_msb(value)
+        self:emit(
+          signatures.sysex_start,
+          signatures.set_pin_value_long,
+          pin_number
+        )
+        local highest_bit = 0
+        repeat
+          self:emit(get_bits(value, highest_bit, highest_bit + 6))
+          highest_bit = highest_bit + 7
+        until (highest_bit >= msb)
+        self:emit(signatures.sysex_end)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.set_sampling_interval'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local get_bits = request('!.number.get_bits')
+    return
+      function(self, delta_ms)
+        self:emit(
+          signatures.sysex_start,
+          signatures.set_sampling_interval,
+          get_bits(delta_ms, 0, 6),
+          get_bits(delta_ms, 7, 14),
+          signatures.sysex_end
+        )
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.system_reset'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self)
+        self:emit(signatures.system_reset)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.toggle_analog_reporting'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local assert_bit = request('!.number.assert_bit')
+    return
+      function(self, analog_pin, state)
+        assert_bit(state)
+        self:emit(signatures.toggle_analog_reporting[analog_pin], state)
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.compiler.request.toggle_digital_reporting'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local assert_bit = request('!.number.assert_bit')
+    return
+      function(self, port_index, state)
+        assert_bit(state)
+        self:emit(
+          signatures.toggle_digital_reporting[port_index], state
+        )
+      end
+  end
+package.preload['workshop.concepts.firmata.parser.interface'] =
+  function(...)
+    local merge = request('!.table.merge')
+    local result = { parse = request('parse'), stream = '' }
+    merge(result, request('implementation.interface'))
+    return result
+  end
+package.preload['workshop.concepts.firmata.parser.parse'] =
+  function(...)
+    local assert_stream = request('!.mechs.streams.assert_is_stream')
+    local parse =
+      function(self, mode)
+        assert_stream(self.stream)
+        local is_request = false
+        if mode then
+          assert_table(mode)
+          is_request = mode.is_request
+        end
+        local result = { }
+        while self:parse_chunk(is_request, result) do
+        end
+        local stream_pos = self.stream:get_position()
+        local stream_length = self.stream:get_length()
+        local is_fully_parsed = (stream_pos - 1 == stream_length)
+        local status =
+          {
+            stream_pos = stream_pos,
+            stream_length = stream_length,
+            is_fully_parsed = is_fully_parsed,
+          }
+        return result, status
+      end
+    return parse
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.dump_chunk'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        local result = { }
+        for i = 1, #chunk do
+          local char_code = chunk:byte(i, i)
+          table.insert(result, ('%02X'):format(char_code))
+        end
+        result = table.concat(result, ' ')
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.frame_command'
+] =
+  function(...)
+    local command_regexp =
+      ('^[%c-%c]([%c-%c]*)'):format(0x80, 0xFF, 0x00, 0x7F)
+    return
+      function(self)
+        local cmd = self.stream:get_slot():byte()
+        local chunk = self.stream:match_regexp(command_regexp)
+        if not chunk then
+          return
+        end
+        return cmd, chunk
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.frame_sysex'
+] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local sysex_start = signatures.sysex_start
+    local sysex_end = signatures.sysex_end
+    local sysex_frame_regexp =
+      ('^%c([%c-%c]+)%c'):format(sysex_start, 0x00, 0x7F, sysex_end)
+    return
+      function(self)
+        local chunk = self.stream:match_regexp(sysex_frame_regexp)
+        if not chunk then
+          return
+        end
+        local type_id = chunk:byte(1)
+        local data
+        if (type_id == 0) then
+          assert(#chunk >= 3)
+          type_id = (chunk:byte(2) << 8) | byte(3)
+          data = chunk:sub(4)
+        else
+          assert(type_id <= 0x7D)
+          data = chunk:sub(2)
+        end
+        return type_id, data
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.interface'
+] =
+  function(...)
+    return
+      {
+        frame_command = request('frame_command'),
+        frame_sysex = request('frame_sysex'),
+        parse_chunk = request('parse_chunk'),
+        dump_chunk = request('dump_chunk'),
+        to_8bit_string = request('to_8bit_string'),
+        to_word = request('to_word'),
+        to_byte = request('to_byte'),
+        to_bytes = request('to_bytes'),
+      }
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.parse_chunk'
+] =
+  function(...)
+    local sysex_start =
+      request('!.concepts.firmata.protocol.signatures').sysex_start
+    local parsers =
+      {
+        [true] =
+          {
+            sysex = request('^.request.sysex.parsers'),
+            base = request('^.request.parsers'),
+          },
+        [false] =
+          {
+            sysex = request('^.reply.sysex.parsers'),
+            base = request('^.reply.parsers'),
+          },
+      }
+    return
+      function(self, is_request, results)
+        assert_boolean(is_request)
+        local cur_char = self.stream:get_slot()
+        if not cur_char then
+          return
+        end
+        local type_id = cur_char:byte()
+        local is_sysex
+        local chunk
+        local parser_rec
+        local orig_pos = self.stream:get_position()
+        if (type_id & 0x80 == 0) then
+          local msg =
+            ('Current byte (%02X) have 8th bit clear, not a command.'):format(
+              type_id
+            )
+          error(msg)
+        elseif (type_id == sysex_start) then
+          is_sysex = true
+          type_id, chunk = self:frame_sysex()
+          parser_rec = parsers[is_request].sysex[type_id]
+        else
+          type_id, chunk = self:frame_command()
+          parser_rec = parsers[is_request].base[type_id]
+        end
+        if not chunk then
+          self.stream:set_position(orig_pos)
+          return
+        end
+        if not parser_rec then
+          local cmd_type = is_sysex and 'sysex' or 'base'
+          local msg =
+            ('No parser found. (type: %s, id: %02X, chunk: %s)'):format(
+              cmd_type, type_id, self:dump_chunk(chunk)
+            )
+          error(msg)
+        end
+        local record = parser_rec.parser(self, chunk, type_id)
+        if not record then
+          self.stream:set_position(orig_pos)
+          return
+        end
+        record.type = parser_rec.name
+        table.insert(results, record)
+        return true
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.to_8bit_string'
+] =
+  function(...)
+    return
+      function(self, s)
+        assert_string(s)
+        assert(#s % 2 == 0)
+        local result = { }
+        for c_low, c_high in s:gmatch('(.)(.)') do
+          local code_low = c_low:byte()
+          assert(code_low <= 0x7F)
+          local code_high = c_high:byte()
+          assert(code_high <= 1)
+          local code = code_low | (code_high << 7)
+          table.insert(result, string.char(code))
+        end
+        result = table.concat(result)
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.to_byte'
+] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    return
+      function(self, b0, b1)
+        local result = self:to_word(b0, b1)
+        assert_byte(result)
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.to_bytes'
+] =
+  function(...)
+    return
+      function(self, s)
+        assert_string(s)
+        local result = self:to_8bit_string(s)
+        result = { result:byte(1, -1) }
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.implementation.to_word'
+] =
+  function(...)
+    return
+      function(self, b0, b1)
+        assert_integer(b0)
+        assert(b0 <= 0x7F)
+        assert_integer(b1)
+        assert(b1 <= 0x7F)
+        local result = b0 | (b1 << 7)
+        return result
+      end
+  end
+package.preload['workshop.concepts.firmata.parser.reply.analog_report'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      function(self, chunk, type_id)
+        if (#chunk < 2) then
+          return
+        end
+        return
+          {
+            analog_pin = signatures.analog_report[type_id],
+            value = self:to_word(chunk:byte(1, 2)),
+          }
+      end
+  end
+package.preload['workshop.concepts.firmata.parser.reply.digital_report'] =
+  function(...)
+    local Signatures = request('!.concepts.firmata.protocol.signatures')
+    local get_bit = request('!.number.get_bit')
+    local parse_digital_report =
+      function(Me, chunk, type_id)
+        if (#chunk < 2) then
+          return
+        end
+        local port_index = Signatures.digital_report[type_id]
+        local value = Me:to_word(chunk:byte(1, 2))
+        local Result = { port_index = port_index, pins = { } }
+        local base_offset = port_index * 8
+        for pin_offset = 0, 7 do
+          Result.pins[base_offset + pin_offset] =
+            get_bit(value, pin_offset)
+        end
+        return Result
+      end
+    return parse_digital_report
+  end
+package.preload['workshop.concepts.firmata.parser.reply.parsers'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    local result =
+      {
+        [signatures.protocol_version] =
+          {
+            name = 'report_protocol_version',
+            parser = request('report_protocol_version'),
+          },
+      }
+    local analog_report_parser =
+      { name = 'analog_report', parser = request('analog_report') }
+    for k, v in pairs(signatures.analog_report) do
+      result[k] = analog_report_parser
+    end
+    local digital_report_parser =
+      { name = 'digital_report', parser = request('digital_report') }
+    for k, v in pairs(signatures.digital_report) do
+      result[k] = digital_report_parser
+    end
+    return result
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.report_protocol_version'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        if (#chunk < 2) then
+          return
+        end
+        return { major = chunk:byte(1), minor = chunk:byte(2) }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.i2c_reply'
+] =
+  function(...)
+    local parse_i2c_reply_chunk =
+      function(self, chunk)
+        local device_id = self:to_word(chunk:byte(1, 2))
+        local offset = self:to_word(chunk:byte(3, 4))
+        local data = self:to_bytes(chunk:sub(5))
+        return { device_id = device_id, offset = offset, data = data }
+      end
+    return parse_i2c_reply_chunk
+  end
+package.preload['workshop.concepts.firmata.parser.reply.sysex.parsers'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      {
+        [signatures.firmware] =
+          {
+            name = 'report_version',
+            parser = request('report_version'),
+          },
+        [signatures.report_capabilities] =
+          {
+            name = 'pin_capabilities',
+            parser = request('report_capabilities'),
+          },
+        [signatures.report_analog_mapping] =
+          {
+            name = 'analog_mapping',
+            parser = request('report_analog_mapping'),
+          },
+        [signatures.report_pin_state] =
+          { name = 'pin_state', parser = request('report_pin_state') },
+        [signatures.send_string] =
+          { name = 'send_string', parser = request('send_string') },
+        [signatures.i2c_reply] =
+          { name = 'i2c_reply', parser = request('i2c_reply') },
+      }
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.report_analog_mapping'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        local result = { analog_pins = { }, num_pins = #chunk }
+        for i = 1, result.num_pins do
+          local pin_index = i - 1
+          local analog_index = chunk:byte(i)
+          if (analog_index ~= 127) then
+            result.analog_pins[pin_index] = analog_index
+          end
+        end
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.report_capabilities'
+] =
+  function(...)
+    local mode_names = request('!.concepts.firmata.protocol.mode_names')
+    local parse_pin_capabilities =
+      function(chunk)
+        local result = { }
+        for mode, resolution in chunk:gmatch('(.)(.)') do
+          local mode_name = mode_names[mode:byte()]
+          if not mode_name then
+            error(('No name for mode %02X'):format(mode:byte()))
+          end
+          result[mode_name] = resolution:byte()
+        end
+        return result
+      end
+    local get_part_fmt = '(.-)\x7F'
+    return
+      function(self, chunk)
+        local result = { }
+        local pin_index = 0
+        for sub_chunk in chunk:gmatch(get_part_fmt) do
+          result[pin_index] = parse_pin_capabilities(sub_chunk)
+          pin_index = pin_index + 1
+        end
+        result.num_pins = pin_index
+        return result
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.report_pin_state'
+] =
+  function(...)
+    local mode_names = request('!.concepts.firmata.protocol.mode_names')
+    return
+      function(self, chunk)
+        local value = 0
+        for i = #chunk, 3, -1 do
+          value = (value << 7) | chunk:byte(i)
+        end
+        return
+          {
+            pin = chunk:byte(1),
+            mode = mode_names[chunk:byte(2)],
+            state = value,
+          }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.report_version'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        return
+          {
+            major = chunk:byte(1),
+            minor = chunk:byte(2),
+            file_name = self:to_8bit_string(chunk:sub(3)),
+          }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.reply.sysex.send_string'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        return { message = self:to_8bit_string(chunk) }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.request.get_protocol_version'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        return { }
+      end
+  end
+package.preload['workshop.concepts.firmata.parser.request.parsers'] =
+  function(...)
+    local signatures = request('!.concepts.firmata.protocol.signatures')
+    return
+      {
+        [signatures.protocol_version] =
+          {
+            name = 'get_protocol_version',
+            parser = request('get_protocol_version'),
+          },
+        [signatures.pin_mode] =
+          { name = 'set_pin_mode', parser = request('set_pin_mode') },
+        [signatures.pin_value] =
+          { name = 'set_pin_value', parser = request('set_pin_value') },
+        [signatures.system_reset] =
+          { name = 'system_reset', parser = request('system_reset') },
+      }
+  end
+package.preload['workshop.concepts.firmata.parser.request.set_pin_mode'] =
+  function(...)
+    return
+      function(self, chunk)
+        if (#chunk < 2) then
+          return
+        end
+        return { pin_number = chunk:byte(1), pin_mode = chunk:byte(2) }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.request.set_pin_value'
+] =
+  function(...)
+    return
+      function(self, chunk)
+        if (#chunk < 2) then
+          return
+        end
+        return { pin_number = chunk:byte(1), pin_value = chunk:byte(2) }
+      end
+  end
+package.preload['workshop.concepts.firmata.parser.request.system_reset'] =
+  function(...)
+    return
+      function(self, chunk)
+        return { }
+      end
+  end
+package.preload[
+  'workshop.concepts.firmata.parser.request.sysex.parsers'
+] =
+  function(...)
+    return { }
+  end
+package.preload[
+  'workshop.concepts.firmata.protocol.assert_valid_pin_mode'
+] =
+  function(...)
+    local pin_modes = request('pin_modes')
+    return
+      function(pin_mode)
+        assert(pin_modes[pin_mode])
+      end
+  end
+package.preload['workshop.concepts.firmata.protocol.interface'] =
+  function(...)
+    return
+      {
+        signatures = request('signatures'),
+        pin_modes = request('pin_modes'),
+        assert_valid_pin_mode = request('assert_valid_pin_mode'),
+        version = request('version'),
+      }
+  end
+package.preload['workshop.concepts.firmata.protocol.mode_names'] =
+  function(...)
+    local pin_modes = request('pin_modes')
+    local invert_table = request('!.table.invert')
+    return invert_table(pin_modes)
+  end
+package.preload['workshop.concepts.firmata.protocol.pin_modes'] =
+  function(...)
+    return
+      {
+        input = 0,
+        output = 1,
+        analog_input = 2,
+        pwm = 3,
+        servo = 4,
+        shift = 5,
+        i2c = 6,
+        onewire = 7,
+        stepper = 8,
+        encoder = 9,
+        serial = 10,
+        pullup = 11,
+        ignore = 127,
+      }
+  end
+package.preload['workshop.concepts.firmata.protocol.signatures'] =
+  function(...)
+    return
+      {
+        digital_report =
+          {
+            [0x90] = 0x0,
+            [0x91] = 0x1,
+            [0x92] = 0x2,
+            [0x93] = 0x3,
+            [0x94] = 0x4,
+            [0x95] = 0x5,
+            [0x96] = 0x6,
+            [0x97] = 0x7,
+            [0x98] = 0x8,
+            [0x99] = 0x9,
+            [0x9A] = 0xA,
+            [0x9B] = 0xB,
+            [0x9C] = 0xC,
+            [0x9D] = 0xD,
+            [0x9E] = 0xE,
+            [0x9F] = 0xF,
+          },
+        toggle_analog_reporting =
+          {
+            [0x0] = 0xC0,
+            [0x1] = 0xC1,
+            [0x2] = 0xC2,
+            [0x3] = 0xC3,
+            [0x4] = 0xC4,
+            [0x5] = 0xC5,
+            [0x6] = 0xC6,
+            [0x7] = 0xC7,
+            [0x8] = 0xC8,
+            [0x9] = 0xC9,
+            [0xA] = 0xCA,
+            [0xB] = 0xCB,
+            [0xC] = 0xCC,
+            [0xD] = 0xCD,
+            [0xE] = 0xCE,
+            [0xF] = 0xCF,
+          },
+        toggle_digital_reporting =
+          {
+            [0x0] = 0xD0,
+            [0x1] = 0xD1,
+            [0x2] = 0xD2,
+            [0x3] = 0xD3,
+            [0x4] = 0xD4,
+            [0x5] = 0xD5,
+            [0x6] = 0xD6,
+            [0x7] = 0xD7,
+            [0x8] = 0xD8,
+            [0x9] = 0xD9,
+            [0xA] = 0xDA,
+            [0xB] = 0xDB,
+            [0xC] = 0xDC,
+            [0xD] = 0xDD,
+            [0xE] = 0xDE,
+            [0xF] = 0xDF,
+          },
+        analog_report =
+          {
+            [0xE0] = 0x0,
+            [0xE1] = 0x1,
+            [0xE2] = 0x2,
+            [0xE3] = 0x3,
+            [0xE4] = 0x4,
+            [0xE5] = 0x5,
+            [0xE6] = 0x6,
+            [0xE7] = 0x7,
+            [0xE8] = 0x8,
+            [0xE9] = 0x9,
+            [0xEA] = 0xA,
+            [0xEB] = 0xB,
+            [0xEC] = 0xC,
+            [0xED] = 0xD,
+            [0xEE] = 0xE,
+            [0xEF] = 0xF,
+          },
+        pin_mode = 0xF4,
+        pin_value = 0xF5,
+        protocol_version = 0xF9,
+        sysex_start = 0xF0,
+        sysex_end = 0xF7,
+        system_reset = 0xFF,
+        firmware = 0x79,
+        query_analog_mapping = 0x69,
+        report_analog_mapping = 0x6A,
+        query_capabilities = 0x6B,
+        report_capabilities = 0x6C,
+        query_pin_state = 0x6D,
+        report_pin_state = 0x6E,
+        set_pin_value_long = 0x6F,
+        send_string = 0x71,
+        i2c_request = 0x76,
+        i2c_reply = 0x77,
+        i2c_config = 0x78,
+        set_sampling_interval = 0x7A,
+      }
+  end
+package.preload['workshop.concepts.firmata.protocol.version'] =
+  function(...)
+    return { major = 2, minor = 5, file_name = 'StandardFirmata' }
+  end
+package.preload['workshop.concepts.i2c.assert_device_id'] =
+  function(...)
+    local get_bits = request('!.number.get_bits')
+    local assert_device_id =
+      function(device_id)
+        assert_integer(device_id)
+        if (device_id ~= get_bits(device_id, 0, 9)) then
+          local msg =
+            string.format(
+              'Given device id 0x%X is not fitting in 10 bits.',
+              device_id
+            )
+          error(msg, 2)
+        end
+      end
+    return assert_device_id
+  end
+package.preload['workshop.concepts.list.add_item'] =
+  function(...)
+    local tbl_insert = table.insert
+    return
+      function(OurList, item)
+        tbl_insert(OurList, item)
+      end
+  end
+package.preload['workshop.concepts.list.add_list'] =
+  function(...)
+    local tbl_move = table.move
+    return
+      function(OurList, AnotherList)
+        assert(OurList ~= AnotherList)
+        tbl_move(AnotherList, 1, #AnotherList, #OurList + 1, OurList)
+      end
+  end
+package.preload['workshop.concepts.list.select_seg'] =
+  function(...)
+    local is_natural = request('!.number.is_natural')
+    local tbl_move = table.move
+    return
+      function(List, start_idx, len)
+        assert(is_natural(start_idx))
+        assert(is_natural(len))
+        local stop_idx = start_idx + len - 1
+        local Result = { }
+        tbl_move(List, start_idx, stop_idx, 1, Result)
+        return Result
+      end
+  end
+package.preload['workshop.concepts.list.to_string'] =
+  function(...)
+    local tbl_concat = table.concat
+    return
+      function(List, separator_str)
+        assert_table(List)
+        separator_str = separator_str or ''
+        assert_string(separator_str)
+        return tbl_concat(List, separator_str)
+      end
+  end
+package.preload['workshop.concepts.lua.NumberTypeNames'] =
+  function(...)
+    return { 'integer', 'float' }
+  end
+package.preload['workshop.concepts.lua.TypeNames'] =
+  function(...)
+    return
+      {
+        'nil',
+        'boolean',
+        'number',
+        'string',
+        'function',
+        'thread',
+        'userdata',
+        'table',
+      }
+  end
+package.preload['workshop.concepts.path_name.Syntels'] =
+  function(...)
+    return { separator = '/', self_dir = '.', upper_dir = '..' }
+  end
+package.preload['workshop.concepts.path_name.get_host_dir'] =
+  function(...)
+    local self_dir = request('Syntels').self_dir
+    local is_directory = request('is_directory')
+    local is_absolute = request('is_absolute')
+    local select_seg = request('!.concepts.list.select_seg')
+    local add_to_list = request('!.concepts.list.add_item')
+    return
+      function(Pathname)
+        local HostDir
+        local host_dir_end_idx
+        if is_directory(Pathname) then
+          host_dir_end_idx = #Pathname - 2
+        else
+          host_dir_end_idx = #Pathname - 1
+        end
+        if (host_dir_end_idx <= 0) then
+          if is_absolute(Pathname) then
+            HostDir = { '' }
+          else
+            HostDir = { self_dir }
+          end
+        else
+          HostDir = select_seg(Pathname, 1, host_dir_end_idx)
+        end
+        add_to_list(HostDir, '')
+        return HostDir
+      end
+  end
+package.preload['workshop.concepts.path_name.get_host_dir_str'] =
+  function(...)
+    local pathname_from_str = request('pathname_from_str')
+    local pathname_to_str = request('pathname_to_str')
+    local get_host_dir = request('get_host_dir')
+    return
+      function(pathname)
+        return
+          pathname_to_str(get_host_dir(pathname_from_str(pathname)))
+      end
+  end
+package.preload['workshop.concepts.path_name.is_absolute'] =
+  function(...)
+    return
+      function(Pathname)
+        return (Pathname[1] == '')
+      end
+  end
+package.preload['workshop.concepts.path_name.is_directory'] =
+  function(...)
+    local self_dir
+    local upper_dir
+    do
+      local Syntels = request('Syntels')
+      self_dir = Syntels.self_dir
+      upper_dir = Syntels.upper_dir
+    end
+    return
+      function(Pathname)
+        local last_node = Pathname[#Pathname]
+        return
+          (last_node == '') or
+          (last_node == self_dir) or
+          (last_node == upper_dir)
+      end
+  end
+package.preload['workshop.concepts.path_name.normalize'] =
+  function(...)
+    local pathname_from_str = request('pathname_from_str')
+    local pathname_to_str = request('pathname_to_str')
+    return
+      function(path_name)
+        return pathname_to_str(pathname_from_str(path_name))
+      end
+  end
+package.preload['workshop.concepts.path_name.pathname_from_str'] =
+  function(...)
+    local split_string = request('!.string.split')
+    local check_is_absolute = request('is_absolute')
+    local check_is_directory = request('is_directory')
+    local add_to_list = request('!.concepts.list.add_item')
+    local add_list = request('!.concepts.list.add_list')
+    local empty = ''
+    local self_dir
+    local sep
+    do
+      local Syntels = request('Syntels')
+      self_dir = Syntels.self_dir
+      sep = Syntels.separator
+    end
+    return
+      function(path_name)
+        assert_string(path_name)
+        if (path_name == empty) then
+          error('Empty pathname.')
+        end
+        local is_absolute
+        local is_directory
+        local Names = { }
+        do
+          local Segments = split_string(path_name .. sep, sep)
+          is_absolute = check_is_absolute(Segments)
+          is_directory = check_is_directory(Segments)
+          for _, segment in ipairs(Segments) do
+            if (segment ~= empty) and (segment ~= self_dir) then
+              add_to_list(Names, segment)
+            end
+          end
+        end
+        if (#Names == 0) and not is_absolute then
+          add_to_list(Names, self_dir)
+        end
+        do
+          local Result = { }
+          if is_absolute then
+            add_to_list(Result, empty)
+          end
+          add_list(Result, Names)
+          if is_directory then
+            add_to_list(Result, empty)
+          end
+          return Result
+        end
+      end
+  end
+package.preload['workshop.concepts.path_name.pathname_to_str'] =
+  function(...)
+    local sep = request('Syntels').separator
+    local clean_pathname
+    do
+      local clean_name
+      do
+        local ends_with = request('!.string.ends_with')
+        local str_sub = string.sub
+        clean_name =
+          function(name)
+            local sep_len = #sep
+            while ends_with(name, sep) do
+              name = str_sub(name, 1, -(sep_len + 1))
+            end
+            return name
+          end
+      end
+      local add_to_list = request('!.concepts.list.add_item')
+      clean_pathname =
+        function(Pathname)
+          local Result = { }
+          for _, name in ipairs(Pathname) do
+            add_to_list(Result, clean_name(name))
+          end
+          return Result
+        end
+    end
+    local list_to_str = request('!.concepts.list.to_string')
+    return
+      function(Pathname)
+        return list_to_str(clean_pathname(Pathname), sep)
+      end
+  end
+package.preload['workshop.concepts.shell.execute'] =
+  function(...)
+    local get_is_aborted =
+      function(result_type_code)
+        if (result_type_code == 'signal') then
+          return true
+        elseif (result_type_code == 'exit') then
+          return false
+        else
+          error('Unknown termination status.')
+        end
+      end
+    local os_tmpname = os.tmpname
+    local os_execute = os.execute
+    local file_to_str = request('!.convert.file_to_str')
+    local os_remove = os.remove
+    return
+      function(command)
+        local output_filename = os_tmpname()
+        local error_filename = os_tmpname()
+        local shell_command =
+          command ..
+          ' ' ..
+          '1>' ..
+          output_filename ..
+          ' ' ..
+          '2>' ..
+          error_filename
+        local _, result_type_code, result_code =
+          os_execute(shell_command)
+        local Result =
+          {
+            result_code = result_code,
+            is_aborted = get_is_aborted(result_type_code),
+            output = file_to_str(output_filename),
+            error = file_to_str(error_filename),
+          }
+        os_remove(output_filename)
+        os_remove(error_filename)
+        return (Result.result_code == 0), Result
+      end
+  end
+package.preload['workshop.concepts.shell.quote'] =
+  function(...)
+    local empty = ''
+    local single_quote
+    local backslash
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      single_quote = Ascii.single_quote
+      backslash = Ascii.backslash
+    end
+    local list_to_str = request('!.concepts.list.to_string')
+    local str_find = string.find
+    local needs_quoting
+    do
+      local special_chars_regexp
+      local starts_with_comment_regexp
+      do
+        local quote_regexp = request('!.lua.regexp.quote')
+        do
+          local SpecialChars = request('quote.SpecialChars')
+          local special_chars_str = list_to_str(SpecialChars)
+          special_chars_regexp =
+            '[' .. quote_regexp(special_chars_str) .. ']'
+        end
+        do
+          local SpaceChars = request('quote.SpaceChars')
+          local space_chars_str = list_to_str(SpaceChars)
+          local space_chars_regexp =
+            '[' .. quote_regexp(space_chars_str) .. ']'
+          local comment_char = '#'
+          starts_with_comment_regexp =
+            '^' .. space_chars_regexp .. '+' .. comment_char
+        end
+      end
+      needs_quoting =
+        function(str)
+          return
+            (str == empty) or
+            not is_nil(str_find(str, special_chars_regexp)) or
+            not is_nil(str_find(str, starts_with_comment_regexp))
+        end
+    end
+    local split_string = request('!.string.split')
+    local add_to_list = request('!.concepts.list.add_item')
+    local quote
+    quote =
+      function(str)
+        assert_string(str)
+        if not needs_quoting(str) then
+          return str
+        end
+        if not str_find(str, single_quote) then
+          return single_quote .. str .. single_quote
+        end
+        str = str .. single_quote
+        local RawItems = split_string(str, single_quote)
+        local Items = { }
+        for _, item in ipairs(RawItems) do
+          local quoted_item
+          if (item == empty) then
+            quoted_item = empty
+          else
+            quoted_item = quote(item)
+          end
+          add_to_list(Items, quoted_item)
+        end
+        return list_to_str(Items, backslash .. single_quote)
+      end
+    return quote
+  end
+package.preload['workshop.concepts.shell.quote.SpaceChars'] =
+  function(...)
+    local SpaceChars
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      SpaceChars = { Ascii.tab, Ascii.space, Ascii.newline }
+    end
+    return SpaceChars
+  end
+package.preload['workshop.concepts.shell.quote.SpecialChars'] =
+  function(...)
+    local SpecialChars
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      local SpaceChars = request('SpaceChars')
+      local add_list = request('!.concepts.list.add_list')
+      SpecialChars =
+        {
+          Ascii.single_quote,
+          Ascii.double_quote,
+          Ascii.bang,
+          Ascii.dollar_sign,
+          Ascii.ampersand,
+          Ascii.asterisk,
+          Ascii.semicolon,
+          Ascii.backslash,
+          Ascii.caret,
+          Ascii.backtick,
+          Ascii.pipe,
+          Ascii.less_than,
+          Ascii.greater_than,
+          Ascii.opening_paren,
+          Ascii.closing_paren,
+          Ascii.opening_bracket,
+          Ascii.closing_bracket,
+          Ascii.opening_brace,
+          Ascii.closing_brace,
+        }
+      add_list(SpecialChars, SpaceChars)
+    end
+    return SpecialChars
+  end
+package.preload['workshop.concepts.words.to_string'] =
+  function(...)
+    local list_to_string = request('!.concepts.list.to_string')
+    return
+      function(Words)
+        return list_to_string(Words, ' ')
+      end
+  end
+package.preload['workshop.convert.bcd_from_byte'] =
+  function(...)
+    local set_bits = request('!.number.set_bits')
+    local bcd_from_byte =
+      function(byte)
+        local tens = byte // 10
+        local ones = byte % 10
+        return set_bits(tens, 4, 7) | set_bits(ones, 0, 3)
+      end
+    return bcd_from_byte
+  end
+package.preload['workshop.convert.bcd_to_byte'] =
+  function(...)
+    local get_bits = request('!.number.get_bits')
+    local bcd_to_byte =
+      function(byte_bcd)
+        return get_bits(byte_bcd, 4, 7) * 10 + get_bits(byte_bcd, 0, 3)
+      end
+    return bcd_to_byte
+  end
+package.preload['workshop.convert.bits_from_bytes'] =
+  function(...)
+    local byte_to_bits = request('!.convert.byte_to_bits')
+    local add_to_list = request('!.concepts.list.add_item')
+    local list_to_string = request('!.concepts.list.to_string')
+    local bits_from_bytes =
+      function(Bytes)
+        assert_table(Bytes)
+        local BytesBits = { }
+        for idx, byte in ipairs(Bytes) do
+          add_to_list(BytesBits, byte_to_bits(byte))
+        end
+        return list_to_string(BytesBits)
+      end
+    return bits_from_bytes
+  end
+package.preload['workshop.convert.bits_to_bytes'] =
+  function(...)
+    local byte_from_bits = request('!.convert.byte_from_bits')
+    local add_to_list = request('!.concepts.list.add_item')
+    local bits_to_bytes =
+      function(bits_str)
+        local bits_str_len = string.len(bits_str)
+        local Bytes = { }
+        local slice_start_pos = 1
+        while (slice_start_pos <= bits_str_len) do
+          local slice =
+            string.sub(
+              bits_str, slice_start_pos, slice_start_pos + 8 - 1
+            )
+          add_to_list(Bytes, byte_from_bits(slice))
+          slice_start_pos = slice_start_pos + 8
+        end
+        return Bytes
+      end
+    return bits_to_bytes
+  end
+package.preload['workshop.convert.bool_from_bit'] =
+  function(...)
+    local BitChars = request('!.concepts.BitChars')
+    local bit_0_char = BitChars.BitToChar_Map[false]
+    local bit_1_char = BitChars.BitToChar_Map[true]
+    local bool_from_bit =
+      function(bit_str)
+        if (bit_str == bit_0_char) then
+          return false
+        end
+        if (bit_str == bit_1_char) then
+          return true
+        end
+        error(string.format('Wrong bit character %q.', bit_str))
+      end
+    return bool_from_bit
+  end
+package.preload['workshop.convert.bool_to_bit'] =
+  function(...)
+    local BitChars = request('!.concepts.BitChars')
+    local bit_0_char = BitChars.BitToChar_Map[false]
+    local bit_1_char = BitChars.BitToChar_Map[true]
+    local bool_to_bit =
+      function(bit_value)
+        assert_boolean(bit_value)
+        if bit_value then
+          return bit_1_char
+        else
+          return bit_0_char
+        end
+      end
+    return bool_to_bit
+  end
+package.preload['workshop.convert.byte_from_bits'] =
+  function(...)
+    local CharToBit_Map = request('!.concepts.BitChars').CharToBit_Map
+    local set_bit = request('!.number.set_bit')
+    local byte_from_bits =
+      function(bits_str)
+        assert_string(bits_str)
+        local limit = string.len(bits_str)
+        if (limit > 8) then
+          limit = 8
+        end
+        local result = 0
+        for pos = 1, limit do
+          local bit_char = string.sub(bits_str, pos, pos)
+          local bit = CharToBit_Map[bit_char]
+          if not is_boolean(bit) then
+            error(string.format('Invalid bit char %q.', bit_char))
+          end
+          result = set_bit(result, pos - 1, bit)
+        end
+        return result
+      end
+    return byte_from_bits
+  end
+package.preload['workshop.convert.byte_to_bits'] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    local get_bit = request('!.number.get_bit')
+    local BitToChar_Map = request('!.concepts.BitChars').BitToChar_Map
+    local byte_to_bits =
+      function(byte)
+        assert_byte(byte)
+        local bits_str = ''
+        for offs = 0, 7 do
+          bits_str = bits_str .. BitToChar_Map[get_bit(byte, offs)]
+        end
+        return bits_str
+      end
+    return byte_to_bits
+  end
+package.preload['workshop.convert.bytes_from_str'] =
+  function(...)
+    local bytes_from_str =
+      function(str)
+        assert_string(str)
+        return { string.byte(str, 1, string.len(str)) }
+      end
+    return bytes_from_str
+  end
+package.preload['workshop.convert.bytes_to_str'] =
+  function(...)
+    local bytes_to_str =
+      function(Bytes)
+        assert_table(Bytes)
+        return string.char(table.unpack(Bytes))
+      end
+    return bytes_to_str
+  end
+package.preload['workshop.convert.file_to_str'] =
+  function(...)
+    return request('!.file_system.file.to_string')
+  end
+package.preload['workshop.convert.itness_from_str'] =
+  function(...)
+    local StringInputStream =
+      request('!.concepts.StreamIo.Input.String')
+    local itness_parse = request('!.concepts.codec_itness.parse')
+    return
+      function(str)
+        local StringInputStream = new(StringInputStream)
+        StringInputStream:Init(str)
+        return itness_parse(StringInputStream)
+      end
+  end
+package.preload['workshop.convert.ranges_tree_from_itness'] =
+  function(...)
+    local Range = request('!.concepts.RangesTree.Range.Interface')
+    local RangesTreeClass =
+      request('!.concepts.RangesTree.RangesTree.Interface')
+    local deserialize_range =
+      function(NodeIs)
+        local range_start = tonumber(NodeIs[1])
+        local range_len = tonumber(NodeIs[2])
+        return Range.create(range_start, range_len)
+      end
+    local looks_like_range =
+      function(key_is, val_is)
+        return
+          is_table(val_is) and
+          (#val_is == 2) and
+          is_integer(tonumber(val_is[1])) and
+          is_integer(tonumber(val_is[2]))
+      end
+    local looks_like_name =
+      function(key_is, val_is)
+        return is_string(val_is)
+      end
+    local looks_like_node =
+      function(key_is, val_is)
+        return
+          not looks_like_name(key_is, val_is) and
+          not looks_like_range(key_is, val_is)
+      end
+    local ranges_tree_from_itness
+    ranges_tree_from_itness =
+      function(RangesTreeIs, RangesTree, name_prefix)
+        local node_name = name_prefix
+        for key, val in ipairs(RangesTreeIs) do
+          if looks_like_range(key, val) then
+            RangesTree:AddRange(node_name, deserialize_range(val))
+          end
+          if looks_like_name(key, val) then
+            node_name = name_prefix .. val
+            RangesTree:AddName(node_name)
+          end
+          if looks_like_node(key, val) then
+            ranges_tree_from_itness(val, RangesTree, node_name .. '.')
+          end
+        end
+      end
+    local ranges_tree_from_itness_root =
+      function(RangesTreeIs)
+        local RangesTree = RangesTreeClass.create()
+        ranges_tree_from_itness(RangesTreeIs, RangesTree, '')
+        return RangesTree
+      end
+    return ranges_tree_from_itness_root
+  end
+package.preload['workshop.convert.sint8_from_byte'] =
+  function(...)
+    local assert_byte = request('!.number.assert_byte')
+    local sint8_from_byte =
+      function(byte)
+        assert_byte(byte)
+        return string.unpack('b', string.pack('B', byte))
+      end
+    return sint8_from_byte
+  end
+package.preload['workshop.convert.sint8_to_byte'] =
+  function(...)
+    local sint8_to_byte =
+      function(sint8_byte)
+        assert_integer(sint8_byte)
+        assert((sint8_byte >= -128) and (sint8_byte <= 127))
+        return string.unpack('B', string.pack('b', sint8_byte))
+      end
+    return sint8_to_byte
+  end
+package.preload['workshop.file_system.directory.create'] =
+  function(...)
+    local directory_exists = request('exists')
+    local get_mkdir_command = request('!.mechs.cmdline.get_cmd_mkdir')
+    return
+      function(dir_name)
+        assert_string(dir_name)
+        if directory_exists(dir_name) then
+          return true
+        end
+        get_mkdir_command(dir_name):Execute()
+        if directory_exists(dir_name) then
+          return true
+        end
+        return false
+      end
+  end
+package.preload['workshop.file_system.directory.exists'] =
+  function(...)
+    local get_cmd_dir_exists =
+      request('!.mechs.cmdline.get_cmd_dir_exists')
+    return
+      function(dir_name)
+        return (get_cmd_dir_exists(dir_name):Execute())
+      end
+  end
+package.preload['workshop.file_system.file.close'] =
+  function(...)
+    local io_type = io.type
+    return
+      function(File)
+        local file_type = io_type(File)
+        if not is_string(file_type) then
+          return
+        end
+        if (file_type == 'closed file') then
+          return
+        end
+        File:close()
+      end
+  end
+package.preload['workshop.file_system.file.create'] =
+  function(...)
+    local get_dir_name =
+      request('!.concepts.path_name.get_host_dir_str')
+    local mkdir = request('!.file_system.directory.create')
+    local open_file = request('open')
+    local close_file = request('close')
+    return
+      function(pathname, contents)
+        assert_string(pathname)
+        assert_string(contents)
+        mkdir(get_dir_name(pathname))
+        local File = open_file(pathname, 'wb')
+        File:write(contents)
+        close_file(File)
+      end
+  end
+package.preload['workshop.file_system.file.is_byte_stream_device'] =
+  function(...)
+    local is_byte_stream =
+      request('!.mechs.cmdline.get_cmd_is_byte_stream_device')
+    return
+      function(pathname)
+        return (is_byte_stream(pathname):Execute())
+      end
+  end
+package.preload['workshop.file_system.file.open'] =
+  function(...)
+    local default_mode = 'rb'
+    local io_open = io.open
+    return
+      function(pathname, mode)
+        assert_string(pathname)
+        mode = mode or default_mode
+        local file, err_msg = io_open(pathname, mode)
+        if not file then
+          error(err_msg, 2)
+        end
+        return file
+      end
+  end
+package.preload['workshop.file_system.file.open_for_reading'] =
+  function(...)
+    local open_file = request('open')
+    return
+      function(pathname)
+        return open_file(pathname, 'rb')
+      end
+  end
+package.preload['workshop.file_system.file.open_for_writing'] =
+  function(...)
+    local open_file = request('open')
+    return
+      function(pathname)
+        return open_file(pathname, 'w+b')
+      end
+  end
+package.preload['workshop.file_system.file.to_string'] =
+  function(...)
+    local open_file = request('open')
+    local close_file = request('close')
+    return
+      function(pathname)
+        local File = open_file(pathname, 'rb')
+        local result = File:read('a')
+        close_file(File)
+        return result
+      end
+  end
+package.preload['workshop.frontend.tekui.button'] =
+  function(...)
+    local tui = require('tek.ui')
+    local force_merge = request('!.table.merge_and_patch')
+    return
+      function(text, overrides)
+        local result =
+          tui.Text:new(
+            {
+              Mode = 'button',
+              Class = 'button',
+              Text = text,
+              KeyCode = true,
+              Width = 'free',
+            }
+          )
+        force_merge(result, overrides)
+        return result
+      end
+  end
+package.preload['workshop.frontend.tekui.checkbox'] =
+  function(...)
+    local tui = require('tek.ui')
+    local force_merge = request('!.table.merge_and_patch')
+    return
+      function(text, value, id, overrides)
+        local params =
+          { Text = text, Selected = value, Id = id, Width = 'fill' }
+        local result = tui.CheckMark:new(params)
+        force_merge(result, overrides)
+        return result
+      end
+  end
+package.preload['workshop.frontend.tekui.create_hor_group'] =
+  function(...)
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local TekUi = require('tek.ui')
+    local create_hor_group =
+      function(Group)
+        local caption = Group.caption
+        local Contents = Group.Contents
+        local Overrides = Group.Overrides
+        assert_table(Contents)
+        local Settings =
+          {
+            Orientation = 'horizontal',
+            Width = 'fill',
+            Height = 'fill',
+            Legend = caption,
+            Children = Contents,
+          }
+        merge_and_patch(Settings, Overrides)
+        return TekUi.Group:new(Settings)
+      end
+    return create_hor_group
+  end
+package.preload['workshop.frontend.tekui.create_input_box'] =
+  function(...)
+    local TekUi = require('tek.ui')
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local create_input_box =
+      function(name, Overrides)
+        local Settings = { Id = name, Width = 'free' }
+        merge_and_patch(Settings, Overrides)
+        return TekUi.Input:new(Settings)
+      end
+    return create_input_box
+  end
+package.preload['workshop.frontend.tekui.create_ver_group'] =
+  function(...)
+    local merge_and_patch = request('!.table.merge_and_patch')
+    local create_hor_group = request('create_hor_group')
+    local create_ver_group =
+      function(Group)
+        local OrigGroupOverrides = Group.Overrides
+        local Overrides = { Orientation = 'vertical' }
+        merge_and_patch(Overrides, Group.Overrides)
+        Group.Overrides = Overrides
+        local Result = create_hor_group(Group)
+        Group.Overrides = OrigGroupOverrides
+        return Result
+      end
+    return create_ver_group
+  end
+package.preload['workshop.frontend.tekui.create_window'] =
+  function(...)
+    local TekUi = require('tek.ui')
+    local force_merge = request('!.table.merge_and_patch')
+    local create_window =
+      function(title, Overrides, Children)
+        local Params =
+          {
+            Title = title,
+            Children = { Children },
+            Id = 'main-window',
+            Status = 'hide',
+            HideOnEscape = true,
+            Orientation = 'vertical',
+            Width = 'free',
+            Height = 'free',
+          }
+        force_merge(Params, Overrides)
+        return TekUi.Window:new(Params)
+      end
+    return create_window
+  end
+package.preload['workshop.frontend.tekui.get_checkbox'] =
+  function(...)
+    return
+      function(app, checkbox_id)
+        local checkbox = app:getById(checkbox_id)
+        assert_table(checkbox)
+        return checkbox.Selected
+      end
+  end
+package.preload['workshop.frontend.tekui.get_input_number'] =
+  function(...)
+    local get_input_text = request('get_input_text')
+    local get_input_number =
+      function(app, input_box_id)
+        return tonumber(get_input_text(app, input_box_id)) or 0
+      end
+    return get_input_number
+  end
+package.preload['workshop.frontend.tekui.get_input_text'] =
+  function(...)
+    return
+      function(app, input_box_id)
+        local input_box = app:getById(input_box_id)
+        assert_table(input_box)
+        return input_box:getText()
+      end
+  end
+package.preload['workshop.frontend.tekui.radio_button'] =
+  function(...)
+    local tui = require('tek.ui')
+    local force_merge = request('!.table.merge_and_patch')
+    return
+      function(text, id, Overrides)
+        local Result = tui.RadioButton:new({ Text = text, Id = id })
+        force_merge(Result, Overrides)
+        return Result
+      end
+  end
+package.preload['workshop.frontend.tekui.set_checkbox'] =
+  function(...)
+    return
+      function(app, checkbox_id, value)
+        if is_nil(value) then
+          value = true
+        end
+        assert_boolean(value)
+        local checkbox = app:getById(checkbox_id)
+        assert_table(checkbox)
+        checkbox:setValue('Selected', value)
+      end
+  end
+package.preload['workshop.frontend.tekui.set_input_text'] =
+  function(...)
+    return
+      function(app, input_box_id, text)
+        text = tostring(text)
+        local input_box = app:getById(input_box_id)
+        assert_table(input_box)
+        input_box:onEnter()
+        input_box:setValue('Text', text)
+      end
+  end
+package.preload['workshop.frontend.tekui.set_radiomark'] =
+  function(...)
+    return
+      function(app, elem_id)
+        local element = app:getById(elem_id)
+        element:setValue('Selected', true)
+      end
+  end
+package.preload['workshop.frontend.tekui.set_radiomark_binary'] =
+  function(...)
+    local set_radiomark = request('set_radiomark')
+    return
+      function(app, false_id, true_id, is_true)
+        local elem_id
+        assert_boolean(is_true)
+        if is_true then
+          elem_id = true_id
+        else
+          elem_id = false_id
+        end
+        set_radiomark(app, elem_id)
+      end
+  end
+package.preload['workshop.frontend.tekui.text_label'] =
+  function(...)
+    local tui = require('tek.ui')
+    local force_merge = request('!.table.merge_and_patch')
+    local create_text_label =
+      function(text, Overrides)
+        local Params =
+          { Class = 'caption', Width = 'fill', Text = text }
+        force_merge(Params, Overrides)
+        return tui.Text:new(Params)
+      end
+    return create_text_label
+  end
+package.preload['workshop.function.prefix_args'] =
+  function(...)
+    return
+      function(base_func, ...)
+        local prefix_args = table.pack(...)
+        return
+          function(...)
+            return base_func(table.unpack(prefix_args), ...)
+          end
+      end
+  end
+package.preload['workshop.lua.regexp.magic_char_pattern'] =
+  function(...)
+    local magic_chars = request('magic_chars')
+    local str_gsub = string.gsub
+    return '[' .. str_gsub(magic_chars, '.', '%%%0') .. ']'
+  end
+package.preload['workshop.lua.regexp.magic_chars'] =
+  function(...)
+    return '^$()[]%.?*+-'
+  end
+package.preload['workshop.lua.regexp.quote'] =
+  function(...)
+    local magic_char_pattern = request('magic_char_pattern')
+    local str_gsub = string.gsub
+    return
+      function(str)
+        return str_gsub(str, magic_char_pattern, '%%%0')
+      end
+  end
+package.preload['workshop.mechs.cmdline.get_cmd_dir_exists'] =
+  function(...)
+    local normalize = request('!.concepts.path_name.normalize')
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(pathname)
+        local Command = { 'test', { '-d', normalize(pathname) } }
+        return ShellCommand.create(Command)
+      end
+  end
+package.preload['workshop.mechs.cmdline.get_cmd_is_byte_stream_device'] =
+  function(...)
+    local normalize = request('!.concepts.path_name.normalize')
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(pathname)
+        local Command = { 'test', { '-c', normalize(pathname) } }
+        return ShellCommand.create(Command)
+      end
+  end
+package.preload['workshop.mechs.cmdline.get_cmd_mkdir'] =
+  function(...)
+    local normalize = request('!.concepts.path_name.normalize')
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(dir_name)
+        local Command = { 'mkdir', { '-p', normalize(dir_name) } }
+        return ShellCommand.create(Command)
+      end
+  end
+package.preload['workshop.mechs.cmdline.get_cmd_sleep'] =
+  function(...)
+    local str_format = string.format
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(seconds)
+        local Command = { 'sleep', { str_format('%.2f', seconds) } }
+        return ShellCommand.create(Command)
+      end
+  end
+package.preload['workshop.mechs.streams.assert_is_stream'] =
+  function(...)
+    return
+      function(t)
+        assert_table(t)
+        assert_function(t.get_position)
+        assert_function(t.set_position)
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.block_read'] =
+  function(...)
+    return
+      function(self, num_positions)
+        local original_position = self:get_position()
+        local result, num_read = self:read(num_positions)
+        if (num_read < num_positions) then
+          self:set_position(original_position)
+          return
+        end
+        return result
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.get_segment'] =
+  function(...)
+    return
+      function(self, start, len)
+        local init_pos = self:get_position()
+        self:set_position(start)
+        local result = self:block_read(len)
+        self:set_position(init_pos)
+        return result
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.get_slot'] =
+  function(...)
+    return
+      function(self)
+        local init_pos = self:get_position()
+        local result = self:block_read(1)
+        self:set_position(init_pos)
+        return result
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.init'] =
+  function(...)
+    return
+      function(self)
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.interface'] =
+  function(...)
+    return
+      {
+        init = request('init'),
+        get_position = nil,
+        set_position = nil,
+        read = nil,
+        get_length = nil,
+        block_read = request('block_read'),
+        get_segment = request('get_segment'),
+        set_relative_position = request('set_relative_position'),
+        set_next_position = request('set_next_position'),
+        get_slot = request('get_slot'),
+      }
+  end
+package.preload['workshop.mechs.streams.mergeable.set_next_position'] =
+  function(...)
+    return
+      function(self)
+        self:set_position(self:get_position() + 1)
+      end
+  end
+package.preload[
+  'workshop.mechs.streams.mergeable.set_relative_position'
+] =
+  function(...)
+    return
+      function(self, position_offset)
+        self:set_position(self:get_position() + position_offset)
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.get_length'] =
+  function(...)
+    return
+      function(self)
+        return #self.s
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.get_position'] =
+  function(...)
+    return
+      function(self)
+        return self.position
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.init'] =
+  function(...)
+    return
+      function(self, s)
+        assert_string(s)
+        self.s = s
+        self.position = 1
+        self:original_init()
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.interface'] =
+  function(...)
+    local force_merge = request('!.table.merge_and_patch')
+    local BaseInterface = new(request('^.interface'))
+    local original_init = BaseInterface.init
+    local Overrides =
+      {
+        init = request('init'),
+        get_position = request('get_position'),
+        set_position = request('set_position'),
+        read = request('read'),
+        get_length = request('get_length'),
+        match_string = request('match_string'),
+        match_regexp = request('match_regexp'),
+        s = nil,
+        position = nil,
+        original_init = original_init,
+      }
+    local Interface = new(BaseInterface)
+    force_merge(Interface, Overrides)
+    return Interface
+  end
+package.preload['workshop.mechs.streams.mergeable.string.match_regexp'] =
+  function(...)
+    return
+      function(self, pattern)
+        local start, finish, capture =
+          self.s:find(pattern, self:get_position())
+        if start then
+          self:set_position(finish + 1)
+          capture = capture or self.s:sub(start, finish)
+          return capture
+        end
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.match_string'] =
+  function(...)
+    return
+      function(self, str)
+        local segment =
+          self.s:sub(self.position, self.position + #str - 1)
+        if (segment == str) then
+          self.position = self.position + #str
+          return true
+        end
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.read'] =
+  function(...)
+    return
+      function(self, num_positions)
+        local result =
+          self.s:sub(self.position, self.position + num_positions - 1)
+        local num_read = #result
+        self:set_relative_position(num_read)
+        return result, num_read
+      end
+  end
+package.preload['workshop.mechs.streams.mergeable.string.set_position'] =
+  function(...)
+    return
+      function(self, new_position)
+        if (new_position == self.position) then
+          return
+        end
+        if (new_position < 1) then
+          new_position = 1
+        elseif (new_position > #self.s + 1) then
+          new_position = #self.s + 1
+        end
+        self.position = new_position
+      end
+  end
+package.preload['workshop.mechs.tty.get_raw_params'] =
+  function(...)
+    local glue_words = request('!.concepts.words.to_string')
+    local shell_execute = request('!.concepts.shell.execute')
+    local get_tty_params =
+      function(tty_name)
+        local Command = { 'stty', '--file=' .. tty_name, '--save' }
+        local is_ok, ExecResult = shell_execute(glue_words(Command))
+        if not is_ok then
+          return ''
+        end
+        return ExecResult.output
+      end
+    return get_tty_params
+  end
+package.preload['workshop.mechs.tty.set_params'] =
+  function(...)
+    local glue_words = request('!.concepts.words.to_string')
+    local shell_execute = request('!.concepts.shell.execute')
+    local set_params =
+      function(tty_name, Params)
+        local read_timeout_s = Params.read_timeout_s or 0.1
+        local speed_bps = Params.speed_bps or 115200
+        local read_timeout_ds = math.floor(read_timeout_s * 10)
+        local Command =
+          {
+            'stty',
+            '--file=' .. tty_name,
+            tostring(speed_bps),
+            'time',
+            tostring(read_timeout_ds),
+            'raw',
+            'min',
+            '0',
+            'cs8',
+            '-echo',
+            '-echoctl',
+            '-echoe',
+            '-echok',
+            '-echoke',
+            '-icanon',
+            '-icrnl',
+            '-iexten',
+            '-isig',
+            '-ixon',
+            '-opost',
+          }
+        shell_execute(glue_words(Command))
+      end
+    return set_params
+  end
+package.preload['workshop.mechs.tty.set_raw_params'] =
+  function(...)
+    local glue_words = request('!.concepts.words.to_string')
+    local shell_execute = request('!.concepts.shell.execute')
+    local set_raw_params =
+      function(tty_name, params)
+        local Command = { 'stty', '--file=' .. tty_name, params }
+        shell_execute(glue_words(Command))
+      end
+    return set_raw_params
+  end
+package.preload['workshop.number.assert_bit'] =
+  function(...)
+    return
+      function(v)
+        assert_integer(v)
+        if (v ~= 0) and (v ~= 1) then
+          local msg =
+            ('Given number %d is not in bit range (0/1)'):format(v)
+          error(msg, 2)
+        end
+      end
+  end
+package.preload['workshop.number.assert_bit_offs'] =
+  function(...)
+    return
+      function(offs)
+        assert_integer(offs)
+        assert((offs >= 0) and (offs <= 63))
+      end
+  end
+package.preload['workshop.number.assert_byte'] =
+  function(...)
+    local is_byte = request('is_byte')
+    return
+      function(v)
+        assert(is_byte(v))
+      end
+  end
+package.preload['workshop.number.constrain'] =
+  function(...)
+    return
+      function(num, min, max)
+        if (num < min) then
+          return min
+        end
+        if (num > max) then
+          return max
+        end
+        return num
+      end
+  end
+package.preload['workshop.number.get_bit'] =
+  function(...)
+    local assert_bit_offs = request('assert_bit_offs')
+    local get_bit =
+      function(n, bit_offs)
+        assert_integer(n)
+        assert_bit_offs(bit_offs)
+        return (n & (1 << bit_offs) ~= 0)
+      end
+    return get_bit
+  end
+package.preload['workshop.number.get_bits'] =
+  function(...)
+    local assert_bit_offs = request('assert_bit_offs')
+    local get_bits =
+      function(n, start_offs, end_offs)
+        assert_integer(n)
+        assert_bit_offs(start_offs)
+        assert_bit_offs(end_offs)
+        assert(start_offs <= end_offs)
+        local mask
+        mask = (1 << (end_offs + 1)) - 1
+        mask = mask & ~((1 << start_offs) - 1)
+        return (n & mask) >> start_offs
+      end
+    return get_bits
+  end
+package.preload['workshop.number.get_msb'] =
+  function(...)
+    local get_bit = request('!.number.get_bit')
+    local get_msb =
+      function(int)
+        assert_integer(int)
+        for i = 63, 0, -1 do
+          if get_bit(int, i) then
+            return i
+          end
+        end
+        return 0
+      end
+    return get_msb
+  end
+package.preload['workshop.number.is_byte'] =
+  function(...)
+    local get_bits = request('get_bits')
+    local is_byte =
+      function(value)
+        if not is_integer(value) then
+          return false
+        end
+        return (value == get_bits(value, 0, 7))
+      end
+    return is_byte
+  end
+package.preload['workshop.number.is_natural'] =
+  function(...)
+    return
+      function(Number)
+        assert_number(Number)
+        if not is_integer(Number) then
+          return false
+        end
+        if (Number <= 0) then
+          return false
+        end
+        return true
+      end
+  end
+package.preload['workshop.number.set_bit'] =
+  function(...)
+    local assert_bit_offs = request('assert_bit_offs')
+    local set_bit =
+      function(n, bit_offs, bit_val)
+        assert_integer(n)
+        assert_bit_offs(bit_offs)
+        assert_boolean(bit_val)
+        if bit_val then
+          n = n | (1 << bit_offs)
+        else
+          n = n & ~(1 << bit_offs)
+        end
+        return n
+      end
+    return set_bit
+  end
+package.preload['workshop.number.set_bits'] =
+  function(...)
+    local assert_bit_offs = request('assert_bit_offs')
+    local set_bits =
+      function(value, start_offs, end_offs, existing_value)
+        existing_value = is_nil(existing_value) and 0 or existing_value
+        assert_integer(existing_value)
+        assert_integer(value)
+        assert(value >= 0)
+        assert_bit_offs(start_offs)
+        assert_bit_offs(end_offs)
+        assert(start_offs <= end_offs)
+        local addition_mask = (1 << (end_offs + 1)) - 1
+        addition_mask = addition_mask & ~((1 << start_offs) - 1)
+        local preserving_mask = ~addition_mask
+        value = value << start_offs
+        return
+          (existing_value & preserving_mask) | (value & addition_mask)
+      end
+    return set_bits
+  end
+package.preload['workshop.string.ends_with'] =
+  function(...)
+    local str_sub = string.sub
+    return
+      function(base_str, postfix_str)
+        return (str_sub(base_str, -#postfix_str, -1) == postfix_str)
+      end
+  end
+package.preload['workshop.string.split'] =
+  function(...)
+    local ends_with = request('!.string.ends_with')
+    local quote_regexp = request('!.lua.regexp.quote')
+    local str_find = string.find
+    local add_to_list = request('!.concepts.list.add_item')
+    return
+      function(str, delimiter)
+        assert_string(str)
+        assert_string(delimiter)
+        if (delimiter == '') then
+          return { str }
+        end
+        if not ends_with(str, delimiter) then
+          str = str .. delimiter
+        end
+        local Result = { }
+        local item_capture = '(.-)' .. quote_regexp(delimiter) .. '()'
+        local start_pos
+        local end_pos
+        local item_str
+        start_pos = 1
+        while true do
+          start_pos, end_pos, item_str =
+            str_find(str, item_capture, start_pos)
+          if not start_pos then
+            break
+          end
+          add_to_list(Result, item_str)
+          start_pos = end_pos + 1
+        end
+        return Result
+      end
+  end
+package.preload['workshop.system.install_assert_functions'] =
+  function(...)
+    local spawn_assert_func
+    do
+      local str_format = string.format
+      spawn_assert_func =
+        function(type_name)
+          local checker = _G['is_' .. type_name]
+          assert(checker)
+          return
+            function(val)
+              if not checker(val) then
+                local err_msg =
+                  str_format('assert_%s(%s)', type_name, tostring(val))
+                error(err_msg)
+              end
+            end
+        end
+    end
+    local TypeNames = request('!.concepts.lua.TypeNames')
+    local NumberTypeNames = request('!.concepts.lua.NumberTypeNames')
+    local install_assert_funcs =
+      function()
+        for _, type_name in ipairs(TypeNames) do
+          _G['assert_' .. type_name] = spawn_assert_func(type_name)
+        end
+        for _, number_type_name in ipairs(NumberTypeNames) do
+          _G['assert_' .. number_type_name] =
+            spawn_assert_func(number_type_name)
+        end
+      end
+    return install_assert_funcs
+  end
+package.preload['workshop.system.install_is_functions'] =
+  function(...)
+    local type_is =
+      function(type_name)
+        return
+          function(val)
+            return (type(val) == type_name)
+          end
+      end
+    local number_is
+    do
+      local math_type = math.type
+      number_is =
+        function(type_name)
+          return
+            function(val)
+              if not is_number(val) then
+                return false
+              end
+              return (math_type(val) == type_name)
+            end
+        end
+    end
+    local TypeNames = request('!.concepts.lua.TypeNames')
+    local NumberTypeNames = request('!.concepts.lua.NumberTypeNames')
+    return
+      function()
+        for _, type_name in ipairs(TypeNames) do
+          _G['is_' .. type_name] = type_is(type_name)
+        end
+        for _, number_type_name in ipairs(NumberTypeNames) do
+          _G['is_' .. number_type_name] = number_is(number_type_name)
+        end
+      end
+  end
+package.preload['workshop.system.sleep'] =
+  function(...)
+    local get_cmd_sleep = request('!.mechs.cmdline.get_cmd_sleep')
+    local sleep =
+      function(secs)
+        assert_number(secs)
+        assert(secs > 0)
+        get_cmd_sleep(secs):Execute()
+      end
+    return sleep
+  end
+package.preload['workshop.table.apply_table'] =
+  function(...)
+    local keep_str = 'keep'
+    local replace_str = 'replace'
+    local remove_str = 'remove'
+    local get_action =
+      function(has_a, has_b, Rules)
+        for _, Rule in ipairs(Rules) do
+          if (Rule.has_a == has_a) and (Rule.has_b == has_b) then
+            return Rule.action
+          end
+        end
+        return keep_str
+      end
+    local apply_table
+    apply_table =
+      function(A, B, Rules)
+        local Keys = { }
+        do
+          for a_key in pairs(A) do
+            Keys[a_key] = true
+          end
+          for b_key in pairs(B) do
+            Keys[b_key] = true
+          end
+        end
+        for key in pairs(Keys) do
+          local a_key = A[key]
+          local b_key = B[key]
+          if is_table(a_key) and is_table(b_key) then
+            apply_table(a_key, b_key, Rules)
+          else
+            local has_a = not is_nil(a_key)
+            local has_b = not is_nil(b_key)
+            local action = get_action(has_a, has_b, Rules)
+            if (action == keep_str) then
+              ;
+            elseif (action == replace_str) then
+              A[key] = B[key]
+            elseif (action == remove_str) then
+              A[key] = nil
+            end
+          end
+        end
+      end
+    local check_rule =
+      function(Rule)
+        local has_a = is_boolean(Rule.has_a)
+        local has_b = is_boolean(Rule.has_b)
+        local action = Rule.action
+        local is_known_action =
+          (action == keep_str) or
+          (action == replace_str) or
+          (action == remove_str)
+        return has_a and has_b and is_known_action
+      end
+    return
+      function(A, B, Rules)
+        assert_table(A)
+        assert_table(B)
+        assert_table(Rules)
+        assert(A ~= B)
+        for index, Rule in ipairs(Rules) do
+          if not check_rule(Rule) then
+            error('Unsupported rule.')
+          end
+        end
+        apply_table(A, B, Rules)
+      end
+  end
+package.preload['workshop.table.attach_methods'] =
+  function(...)
+    return
+      function(Object, Methods)
+        assert_table(Object)
+        assert_table(Methods)
+        setmetatable(Object, { __index = Methods })
+      end
+  end
+package.preload['workshop.table.clone'] =
+  function(...)
+    return
+      function(Node)
+        local clone
+        do
+          local Cloned = { }
+          clone =
+            function(Node)
+              if (type(Node) ~= 'table') then
+                return Node
+              end
+              if Cloned[Node] then
+                return Cloned[Node]
+              end
+              local Result = { }
+              Cloned[Node] = Result
+              for key, value in pairs(Node) do
+                Result[clone(key)] = clone(value)
+              end
+              setmetatable(Result, getmetatable(Node))
+              return Result
+            end
+        end
+        return clone(Node)
+      end
+  end
+package.preload['workshop.table.invert'] =
+  function(...)
+    return
+      function(Table)
+        assert_table(Table)
+        local Result = { }
+        for Key, Value in pairs(Table) do
+          Result[Value] = Key
+        end
+        return Result
+      end
+  end
+package.preload['workshop.table.is_empty'] =
+  function(...)
+    return
+      function(t)
+        assert_table(t)
+        return is_nil(next(t))
+      end
+  end
+package.preload['workshop.table.merge'] =
+  function(...)
+    local Rules =
+      { { has_a = false, has_b = true, action = 'replace' } }
+    local apply_table = request('apply_table')
+    return
+      function(Result, Additions)
+        apply_table(Result, Additions, Rules)
+      end
+  end
+package.preload['workshop.table.merge_and_patch'] =
+  function(...)
+    local merge = request('merge')
+    local patch = request('patch')
+    return
+      function(Dest, Additions)
+        if not Additions then
+          return
+        end
+        merge(Dest, Additions)
+        patch(Dest, Additions)
+      end
+  end
+package.preload['workshop.table.new'] =
+  function(...)
+    local clone = request('clone')
+    local patch = request('patch')
+    return
+      function(Base, Overrides)
+        assert_table(Base)
+        local Result = clone(Base)
+        if is_table(Overrides) then
+          patch(Result, Overrides)
+        end
+        return Result
+      end
+  end
+package.preload['workshop.table.patch'] =
+  function(...)
+    local Rules = { { has_a = true, has_b = true, action = 'replace' } }
+    local apply_table = request('apply_table')
+    return
+      function(Result, Additions)
+        apply_table(Result, Additions, Rules)
+      end
+  end
+return require('run')
