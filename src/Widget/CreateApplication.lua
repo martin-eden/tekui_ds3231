@@ -2,46 +2,27 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-11-04
+  Last mod.: 2026-11-05
 ]]
 
---[[
-  Input data
-
-    (
-      is_virtual_device [b] -- do not connect to device
-      device_file_name [s] -- device file name
-    )
-]]
-
--- ( Imports
 local TekUi = require('tek.ui')
-local TekUi_Debug = require 'tek.lib.debug'
+
+do
+  local TekUi_Debug = require('tek.lib.debug')
+  TekUi_Debug.level = TekUi_Debug.ERROR
+end
 
 local normalize_file_name = request('!.concepts.path_name.normalize')
 local create_window = request('!.frontend.tekui.create_window')
-
 local special_checkbox_coloring = request('Internals.special_checkbox_coloring')
--- )
 
-TekUi_Debug.level = TekUi_Debug.ERROR
-
-local CreateApplication =
-  function(Me, Config)
-    local is_virtual_device = Config.is_virtual_device
-    local device_file_name = Config.device_file_name
-
+return
+  function(Me, device_file_name)
     local RawDataProvider = Me.RawDataProvider
 
     device_file_name = normalize_file_name(device_file_name)
 
-    local init_done =
-      RawDataProvider:Init(
-        {
-          UseVirtualDevice = is_virtual_device,
-          DeviceFileName = device_file_name,
-        }
-      )
+    local init_done = RawDataProvider:Init(device_file_name)
 
     if not init_done then
       print('Failed to initialize device')
@@ -51,12 +32,7 @@ local CreateApplication =
 
     local Content = Me:CreateContent()
 
-    local title
-    if is_virtual_device then
-      title = 'Virtual DS3231'
-    else
-      title = string.format('DS3231 on %s', device_file_name)
-    end
+    local title = string.format('DS3231 on %s', device_file_name)
 
     local Tickers = Me:CreateTickers()
 
@@ -109,9 +85,7 @@ local CreateApplication =
     return Application
   end
 
--- Export:
-return CreateApplication
-
 --[[
   2026-05-12
+  2026-11-05
 ]]

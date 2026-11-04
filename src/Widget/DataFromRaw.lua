@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-16
+  Last mod.: 2026-11-05
 ]]
 
 -- Imports:
@@ -14,7 +14,6 @@ local DataFromRaw =
   function(Me)
     local RawData = Me.RawDataProvider:Load()
 
-    if (#RawData == 0) then print('Load() broke') end
     if (#RawData == 0) then return end
 
     local RtcRec = parse_raw_data(bytes_to_str(RawData))

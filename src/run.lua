@@ -1,22 +1,11 @@
-#!/bin/lua
-
--- Root script
+-- Root script to run RTC3231 widget
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-16
+  Last mod.: 2026-11-05
 ]]
 
---[[ Develop
-package.path = package.path .. ';../../../?.lua'
---]]
 require('workshop.base')
-
-local Config =
-  {
-    device_file_name = arg[1],
-    is_virtual_device = (arg[1] == '--virtual'),
-  }
 
 local requires_tekui_msg = [[
 This tool requires TekUI GUI framework
@@ -40,42 +29,32 @@ local has_tekui =
   end
 
 if not has_tekui() then
-  print(requires_tekui_msg)
+  io.stdout:write(requires_tekui_msg)
 
   return
 end
 
--- Imports:
 local Widget = request('Widget.Interface')
---[[ Debug
-_G.t2s = request('!.convert.table_to_str')
--- _G.t2s = request('!.concepts.lua_table_code.save')
---]]
 
 local usage_msg = [[
 GUI to display and edit data of hardware clock module DS331
 
 Usage:
 
-  lua run.lua <DevicePath>
-                   ┬
-                   ├── "/dev/ttyUSB<N>" -- use device at that port
-                   └── "--virtual" -- use virtual device (data in local file)
+  <DevicePath>
+       ┬
+       └── "/dev/ttyUSB<N>" -- use device at that port
+
+-- Martin, 2026-11
 ]]
 
 if not arg[1] then
-  print(usage_msg)
+  io.stdout:write(usage_msg)
 
   return
 end
 
-local Application =
-  Widget:CreateApplication(
-    {
-      device_file_name = Config.device_file_name,
-      is_virtual_device = Config.is_virtual_device,
-    }
-  )
+local Application = Widget:CreateApplication(arg[1])
 
 if not Application then
   print('Failed to initialize application')
@@ -90,4 +69,5 @@ Application:run()
   2020 # #
   2026-04 # # #
   2026-05 # #
+  2026-11-05
 ]]

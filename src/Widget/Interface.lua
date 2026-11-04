@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-16
+  Last mod.: 2026-11-05
 ]]
 
 --[[
@@ -21,10 +21,8 @@
     DataToRaw [f] -- save data to data provider
 ]]
 
--- Imports:
-local RawDataProvider = request('Internals.RawDataProvider.Interface')
+local RawDataProvider = request('Internals.RawDataProvider')
 
--- Export:
 return
   {
     -- Main:
