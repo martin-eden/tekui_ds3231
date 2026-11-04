@@ -4,7 +4,7 @@
 # version of "workshop" code hive.
 
 # Author: Martin Eden
-# Last mod.: 2026-06-01
+# Last mod.: 2026-11-04
 
 set -eu
 
@@ -12,10 +12,12 @@ cd ../src
 
 rm -rf workshop/
 
-lua ../build/create_deploy.lua
-
-bash deploy.sh
-rm deploy.sh
+lua ../build/deploy.lua
 
 mv deploy/workshop/ .
 rm -rf deploy/
+
+#
+# 2026 #
+# 2026-11-04
+#
