@@ -1,11 +1,11 @@
--- List with names of all Lua data types
+-- List with type() names for all Lua data types
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-16
+  Last mod.: 2026-11-04
 ]]
 
-local TypeNames =
+return
   {
     'nil',
     'boolean',
@@ -17,10 +17,7 @@ local TypeNames =
     'table',
   }
 
--- Export:
-return TypeNames
-
 --[[
-  2018-02
-  2026-06-16
+  2018 #
+  2026 #
 ]]

@@ -2,48 +2,65 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-27
+  Last mod.: 2026-10-14
 ]]
 
 --[[
-  Output interface is just one method: Write(string)
-
-  String concatenation is expensive in Lua.
+  String concatenation is time-expensive in Lua.
   So Write() adds strings to internal table.
-
-  Call GetString() to get result string.
+  That's memory-expensive.
 ]]
 
--- Imports:
-local list_add_item = request('!.concepts.list.add_item')
-local list_to_string = request('!.concepts.list.to_string')
+--[[
+  Storage format
 
-local Interface =
+    [t] -- list with string chunks
+]]
+
+local write
+do
+  local add_to = request('!.concepts.list.add_item')
+  write =
+    function(Me, data_str)
+      assert_string(data_str)
+      add_to(Me, data_str)
+    end
+end
+
+local get_string
+do
+  local list_to_string = request('!.concepts.list.to_string')
+  get_string =
+    function(Me)
+      return list_to_string(Me)
+    end
+end
+
+local Interface
+local create
+do
+  local attach_methods = request('!.table.attach_methods')
+  create =
+    function()
+      local Me = { }
+      attach_methods(Me, Interface)
+      return Me
+    end
+end
+
+Interface =
   {
-    -- [Main]
-    Write =
-      function(Me, data_str)
-        assert_string(data_str)
-        assert(data_str ~= '')
-
-        list_add_item(Me.Chunks, data_str)
-      end,
-
-    -- [Required extension]
-    GetString =
-      function(Me)
-        return list_to_string(Me.Chunks)
-      end,
-
-    -- [Internal]
-    Chunks = { },
+    create = create,
+    Write = write,
+    GetString = get_string,
   }
 
 -- Export:
-return Interface
+return create()
 
 --[[
   2024 # # # #
   2025 #
-  2026-05-27
+  2026 # #
+  2026-10-14
 ]]

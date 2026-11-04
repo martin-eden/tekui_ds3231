@@ -2,28 +2,29 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-30
+  Last mod.: 2026-10-02
 ]]
 
--- Imports:
+local get_dir_name = request('!.concepts.path_name.get_host_dir_str')
+local mkdir = request('!.file_system.directory.create')
 local open_file = request('open')
+local close_file = request('close')
 
-local create_file =
+-- Export:
+return
   function(pathname, contents)
     assert_string(pathname)
     assert_string(contents)
 
-    local file = open_file(pathname, 'wb')
+    mkdir(get_dir_name(pathname))
 
-    file:write(contents)
-
-    file:close()
+    local File = open_file(pathname, 'wb')
+    File:write(contents)
+    close_file(File)
   end
 
--- Export:
-return create_file
-
 --[[
-  2024
-  2026-05-04
+  2024 #
+  2026 #
+  2026-10-02
 ]]

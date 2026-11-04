@@ -2,22 +2,14 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-12
+  Last mod.: 2026-08-29
 ]]
 
--- Imports:
-local empty = ''
-
-local is_absolute =
+return
   function(Pathname)
-    assert_table(Pathname)
-
-    return (Pathname[1] == empty)
+    return (Pathname[1] == '')
   end
 
--- Export:
-return is_absolute
-
 --[[
-  2026-06-12
+  2026 #
 ]]

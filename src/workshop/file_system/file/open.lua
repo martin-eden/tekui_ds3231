@@ -2,29 +2,19 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-12
+  Last mod.: 2026-09-26
 ]]
-
---[[
-  Contract is that this function returns file handle or explodes
-
-  No pesky ( nil error_msg ) from stock io.open().
-]]
-
--- Imports:
-local normalize_name = request('!.concepts.path_name.normalize')
 
 local default_mode = 'rb'
+local io_open = io.open
 
-local open_file =
+return
   function(pathname, mode)
     assert_string(pathname)
-    assert(is_nil(mode) or is_string(mode))
 
-    pathname = normalize_name(pathname)
     mode = mode or default_mode
 
-    local file, err_msg = io.open(pathname, mode)
+    local file, err_msg = io_open(pathname, mode)
 
     if not file then
       error(err_msg, 2)
@@ -33,11 +23,9 @@ local open_file =
     return file
   end
 
--- Export:
-return open_file
-
 --[[
   2016 #
   2017 #
-  2026-05-04
+  2026 #
+  2026-09-26
 ]]
