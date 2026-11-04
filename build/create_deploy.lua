@@ -1,8 +1,8 @@
--- Load modules to get a list of all required Lua files
+-- Load modules, get list of all required Lua files, copy them
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-01
+  Last mod.: 2026-11-04
 ]]
 
 --[[
@@ -12,35 +12,46 @@
 
   * Do one of
 
-    * Call this file from root Lua source directory:
-        $ lua ../build/create_deploy.lua
-
     * Copy this file to root Lua source directory
+
+    * Call this file from Lua source directory:
+
+        $ lua ../builder/create_deploy.lua
 
   Make sure that main Lua file executes without errors when
   loaded as module. If needed, make changes to it to behave so.
-
-  At loading via request() module dependencies are stored in
-  some global table. create_deploy_script() uses that table to
-  write Bash script which copies module files to local directory.
 ]]
 
+--
+local Modules = { 'run' }
+--
 package.path = package.path .. ';../../../?.lua'
+--
+local ModulePaths, Deps
+do
+  arg[1] = '/dev/ttyUSB0'
+  local observe_modules = require('workshop.system.observe_modules')
+  ModulePaths, Deps = observe_modules(Modules)
+end
+--
 require('workshop.base')
 
-local create_deploy_script = request('!.system.create_deploy_script')
+local FilesList
+do
+  local add_to = request('!.concepts.list.add_item')
+  FilesList = { }
+  for _, ModuleLoc in ipairs(ModulePaths) do
+    add_to(FilesList, ModuleLoc[2])
+  end
+end
 
-local ModulesList =
-  {
-    'workshop.base',
-    'run',
-  }
+local deploy = request('!.mechs.deploy')
 
-create_deploy_script(ModulesList)
+deploy(FilesList)
+--
 
 --[[
   202?
-  2026-01-21
-  2026-04-23
-  2026-06-01
+  2026 # # # #
+  2026-09-24
 ]]
