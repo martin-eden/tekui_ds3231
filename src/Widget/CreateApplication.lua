@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-06-16
+  Last mod.: 2026-11-04
 ]]
 
 --[[
@@ -39,7 +39,7 @@ local CreateApplication =
       RawDataProvider:Init(
         {
           UseVirtualDevice = is_virtual_device,
-          device_file_name = device_file_name,
+          DeviceFileName = device_file_name,
         }
       )
 
