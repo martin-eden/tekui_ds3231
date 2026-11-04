@@ -24,7 +24,7 @@ local Init =
 
     local Compiler = Me.Compiler
 
-    Compiler.output = Teletype.FileHandle
+    Compiler.output = Teletype.File
 
     Compiler.request.i2c_config(Compiler)
 
