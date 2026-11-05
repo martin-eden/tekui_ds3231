@@ -1,8 +1,44 @@
 [![DeepWiki][DeepWiki_Logo]][DeepWiki_Repo] (sometimes AI explains it better)
 
-## RTC DS3231 GUI
+<table>
+  <tr>
+    <th colspan=2 align="center">DS3231 GUI</th>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <th>Updated</th>
+          <td>2026-11-01</td>
+        </tr>
+        <tr>
+          <th>Created</th>
+          <td>2019</td>
+        </tr>
+        <tr>
+          <th>License</th>
+          <td>GPL3</td>
+        </tr>
+        <tr>
+          <th>Code size</th>
+          <td>&lt; 200 K</td>
+        </tr>
+        <tr>
+          <th>💾</th>
+          <td>
+            <a href="deploy/ds3231_gui"><code>ds3231_gui</code></a>
+          </td>
+        </tr>
+      </table>
+    </td>
+    <td align="center">
+      GUI program to setup hardware RTC module on DS3231 chip.
+    </td>
+  </tr>
+</table>
 
-(2019-12/2020-01, 2024, 2026)
+
+## RTC DS3231 GUI
 
 Editable state of [DS3231 real-time clock][ds3231_images].
 
@@ -28,11 +64,6 @@ Usage:
 -- Martin, 2026-11
 ```
 
-If you just want to test GUI without any hardware use
-```
-$ lua run.lua --virtual
-```
-
 1. Pre-flight checks
     1. Connect board to USB port
     2. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`)
@@ -41,7 +72,7 @@ $ lua run.lua --virtual
 2. Run
 
    ```
-   $ lua run.lua /dev/ttyUSB0
+   $ ds3231_gui /dev/ttyUSB0
    ```
 
    (Or correct file name to port with your Uno.)
@@ -50,15 +81,21 @@ $ lua run.lua --virtual
 ## Requirements
 
   * Linux
-  * [Lua 5.3][lua53-setup]
+  * Lua 5.4
   * [Tek-UI][tekui-setup]
   * DS3231 module
-  * Microcontroller (ATmega, ESP, STM ..) with `StandardFirmata`
+  * Microcontroller (ATmega, ESP, STM32 ..) with `StandardFirmata`
     firmware. (This firmware is present in Arduino IDE.)
 
-## Install/remove
 
-Clone this repository / Delete directory.
+## Shipment
+
+Repository contains
+
+  * Compiled code in [`deploy/`](deploy/)
+  * Complete source code in [`src/`](src/)
+  * Rebuild script and tools in [`builder/`](builder/)
+
 
 ## See also
 
@@ -77,7 +114,6 @@ Clone this repository / Delete directory.
 
 [tek-ui]: http://tekui.neoscientists.org/
 [tekui-setup]: https://gist.github.com/martin-eden/e721436788994e5b183e94fb2f84b30b
-[lua53-setup]: https://gist.github.com/martin-eden/4d3d1677244234e6501654cb32316305
 
 [datasheet]: https://github.com/martin-eden/doc.ds3231/raw/master/DS3231.pdf
 [details]: doc_parts/details.md
