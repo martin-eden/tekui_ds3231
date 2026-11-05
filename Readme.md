@@ -16,17 +16,16 @@ Editable state of [DS3231 real-time clock][ds3231_images].
 ## Usage
 
 ```
-$ lua run.lua
-
+$ ds3231_gui
 GUI to display and edit data of hardware clock module DS331
 
 Usage:
 
-  lua run.lua <DevicePath>
-                   ┬
-                   ├── "/dev/ttyUSB<N>" -- use device at that port
-                   └── "--virtual" -- use virtual device (data in local file)
+  <DevicePath>
+       ┬
+       └── "/dev/ttyUSB<N>" -- use device at that port
 
+-- Martin, 2026-11
 ```
 
 If you just want to test GUI without any hardware use
