@@ -2,80 +2,52 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-09
+  Last mod.: 2026-11-26
 ]]
 
--- Imports:
-local Range = request('!.concepts.RangesTree.Range.Interface')
-local RangesTreeClass = request('!.concepts.RangesTree.RangesTree.Interface')
+local range = request('!.concepts.RangesTree.Range.Interface')
+local max = math.max
 
-local deserialize_range =
-  function(NodeIs)
-    local range_start = tonumber(NodeIs[1])
-    local range_len = tonumber(NodeIs[2])
+local convert_node
+convert_node =
+  function(node_is, ranges_tree, name_prefix)
+    local name = name_prefix .. node_is[1]
+    local start = tonumber(node_is[2])
+    local contents = node_is[3]
 
-    return Range.create(range_start, range_len)
-  end
+    ranges_tree:AddName(name)
 
-local looks_like_range =
-  function(key_is, val_is)
-    return
-      is_table(val_is) and
-      (#val_is == 2) and
-      is_integer(tonumber(val_is[1])) and
-      is_integer(tonumber(val_is[2]))
-  end
-
-local looks_like_name =
-  function(key_is, val_is)
-    return is_string(val_is)
-  end
-
-local looks_like_node =
-  function(key_is, val_is)
-    return
-      not looks_like_name(key_is, val_is) and
-      not looks_like_range(key_is, val_is)
-  end
-
-local ranges_tree_from_itness
-ranges_tree_from_itness =
-  function(RangesTreeIs, RangesTree, name_prefix)
-    local node_name = name_prefix
-
-    for key, val in ipairs(RangesTreeIs) do
-      if looks_like_range(key, val) then
-        RangesTree:AddRange(node_name, deserialize_range(val))
+    local len
+    if is_table(contents) then
+      local max_end = 0
+      for _, child in ipairs(contents) do
+        local child_end =
+          convert_node(child, ranges_tree, name .. '.')
+        max_end = max(max_end, child_end)
       end
-
-      if looks_like_name(key, val) then
-        node_name = name_prefix .. val
-
-        RangesTree:AddName(node_name)
-      end
-
-      if looks_like_node(key, val) then
-        ranges_tree_from_itness(
-          val,
-          RangesTree,
-          node_name .. '.'
-        )
-      end
+      len = max_end
+    elseif is_string(contents) then
+      len = tonumber(contents)
     end
+
+    ranges_tree:AddRange(name, range.create(start, len))
+    return start + len - 1
   end
 
-local ranges_tree_from_itness_root =
-  function(RangesTreeIs)
-    local RangesTree = RangesTreeClass.create()
-
-    ranges_tree_from_itness(RangesTreeIs, RangesTree, '')
-
-    return RangesTree
-  end
+local ranges_tree_class =
+  request('!.concepts.RangesTree.RangesTree.Interface')
 
 -- Export:
-return ranges_tree_from_itness_root
+return
+  function(ranges_tree_is)
+    local ranges_tree = ranges_tree_class.create()
+    for _, node_is in ipairs(ranges_tree_is) do
+      convert_node(node_is, ranges_tree, '')
+    end
+    return ranges_tree
+  end
 
 --[[
-  2026-05-05
+  2026 # #
+  2026-11-26
 ]]
