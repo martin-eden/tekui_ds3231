@@ -43,7 +43,7 @@ end
 
 local get_current_moment
 do
-  local round_trip_time_sec = 2
+  local round_trip_time_sec = 3
   local os_time = os.time
   get_current_moment =
     function()
