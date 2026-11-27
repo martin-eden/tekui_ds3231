@@ -9,7 +9,7 @@
       <table>
         <tr>
           <th>Updated</th>
-          <td>2026-11-01</td>
+          <td>2026-11-27</td>
         </tr>
         <tr>
           <th>Created</th>
@@ -57,9 +57,9 @@ GUI to display and edit data of hardware clock module DS331
 
 Usage:
 
-  <DevicePath>
-       ┬
-       └── "/dev/ttyUSB<N>" -- use device at that port
+  <device>
+     ┬
+     └── "/dev/ttyUSB<N>" -- use device at that port
 
 -- Martin, 2026-11
 ```
@@ -69,6 +69,7 @@ Usage:
     2. Launch Arduino IDE and upload `StandardFirmata` snippet (it's under `examples/Firmata/`)
     3. Close Arduino IDE serial monitor window
     4. Connect DS3231 module. Check wiring
+
 2. Run
 
    ```
@@ -81,11 +82,11 @@ Usage:
 ## Requirements
 
   * Linux
-  * Lua 5.4
   * [Tek-UI][tekui-setup]
-  * DS3231 module
+  * Lua 5.4
   * Microcontroller (ATmega, ESP, STM32 ..) with `StandardFirmata`
-    firmware. (This firmware is present in Arduino IDE.)
+    firmware. (Supplied with Arduino IDE.)
+  * DS3231 module
 
 
 ## Shipment
