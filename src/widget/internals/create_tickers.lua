@@ -24,7 +24,7 @@ local create_ticker =
 return
   function(me)
     local load_data_from_device =
-      create_ticker(me.data_from_raw, me, 210)
+      create_ticker(me.data_from_raw, me, 120)
     local update_representations =
       create_ticker(me.update_presentations, me, 30)
     return { load_data_from_device, update_representations }
